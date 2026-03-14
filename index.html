@@ -77,12 +77,25 @@
             transform: translateY(0);
         }
 
-        /* 按钮加载动画 */
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        /* 星星流动动画 */
+        @keyframes starFlow {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0.5; }
         }
-        .spinner {
-            animation: spin 1s linear infinite;
+        .star-spinner {
+            animation: starFlow 1.5s ease-in-out infinite;
+        }
+        
+        /* 进度条动画 */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
+            background-size: 200% 100%;
+            animation: shimmer 2s linear infinite;
         }
 
         /* Toast 动画 - 弹性效果 */
@@ -122,6 +135,31 @@
         }
         .markdown-content p {
             margin-bottom: 1.25em;
+        }
+        /* 修复下划线导致的横线显示问题 */
+        .markdown-content u {
+            text-decoration: none;
+        }
+        .markdown-content hr {
+            display: none !important;
+            visibility: hidden;
+            height: 0;
+            margin: 0;
+            padding: 0;
+        }
+        /* 修复连续下划线显示为横线的问题 */
+        .markdown-content span {
+            text-decoration: none !important;
+        }
+        /* 移除所有可能的边框线 */
+        .markdown-content * {
+            border: none !important;
+        }
+        /* 移除任何可能产生横线的样式 */
+        .markdown-content::before,
+        .markdown-content::after {
+            display: none !important;
+            content: none !important;
         }
         
         /* 内容渐入动画 */
@@ -182,7 +220,7 @@
                             </svg>
                         </div>
                         <div>
-                            <h1 class="text-xl font-semibold text-gray-800">Gradify v1.0</h1>
+                            <h1 class="text-xl font-semibold text-gray-800">Gradify V1.5</h1>
                             <p class="text-xs text-gray-400">英语作业反馈生成器</p>
                         </div>
                     </div>
@@ -379,12 +417,16 @@
         <div class="w-[60%] bg-surface-bg flex flex-col relative">
             <!-- 右侧标题栏 -->
             <div class="px-8 py-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm flex items-center justify-between">
-                <h2 class="text-sm font-medium text-gray-500 uppercase tracking-wide flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    生成结果
-                </h2>
+                <div class="flex items-center gap-3">
+                    <h2 class="text-sm font-medium text-gray-500 uppercase tracking-wide flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        生成结果
+                    </h2>
+                    <!-- 生成状态提示 -->
+                    <div id="generateStatus" class="hidden text-sm px-3 py-1 rounded-lg bg-blue-50 text-blue-600"></div>
+                </div>
                 <!-- 一键复制按钮 -->
                 <button id="copyBtn" 
                     class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -410,7 +452,7 @@
                         <p class="text-gray-300 text-xs mt-1">生成的结果将在这里实时显示</p>
                     </div>
                     <!-- Markdown 内容 -->
-                    <div id="markdownOutput" class="markdown-content text-gray-700 text-[15px] whitespace-pre-wrap hidden"></div>
+                    <div id="markdownOutput" class="markdown-content text-gray-700 text-[15px] whitespace-pre-wrap hidden" style="text-decoration: none !important;"></div>
                 </div>
             </div>
         </div>
@@ -490,11 +532,29 @@
             elements.generateBtn.disabled = loading;
             
             if (loading) {
-                elements.btnIcon.innerHTML = `<svg class="w-5 h-5 spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
-                elements.btnText.textContent = '生成中...';
+                // 星星Loading动画
+                elements.btnIcon.innerHTML = `<svg class="w-6 h-6 star-spinner text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>`;
+                elements.btnText.textContent = 'AI正在生成中...';
             } else {
                 elements.btnIcon.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`;
                 elements.btnText.textContent = '生成反馈';
+            }
+        }
+        
+        // 显示生成状态提示
+        function showGenerateStatus(message, type = 'info') {
+            const statusBar = document.getElementById('generateStatus');
+            if (!statusBar) return;
+            
+            statusBar.textContent = message;
+            statusBar.className = `text-sm px-4 py-2 rounded-lg transition-all duration-300 ${type === 'info' ? 'bg-blue-50 text-blue-600' : type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`;
+            statusBar.classList.remove('hidden');
+        }
+        
+        function hideGenerateStatus() {
+            const statusBar = document.getElementById('generateStatus');
+            if (statusBar) {
+                statusBar.classList.add('hidden');
             }
         }
 
@@ -625,21 +685,25 @@
                                 const data = JSON.parse(line.slice(6));
                                 
                                 if (data.type === 'header') {
+                                    showGenerateStatus('✅ 模板生成完成，AI正在扩写中...', 'info');
                                     state.fullContent += data.content;
-                                    elements.markdownOutput.innerHTML = marked.parse(state.fullContent);
+                                    elements.markdownOutput.textContent = state.fullContent;
                                     scrollToBottom();
                                 } else if (data.content) {
+                                    showGenerateStatus('✨ AI正在生成解析...', 'info');
                                     state.fullContent += data.content;
-                                    elements.markdownOutput.innerHTML = marked.parse(state.fullContent);
+                                    elements.markdownOutput.textContent = state.fullContent;
                                     scrollToBottom();
                                 } else if (data.type === 'footer') {
+                                    showGenerateStatus('✅ 正在添加备注信息...', 'info');
                                     state.fullContent += data.content;
-                                    elements.markdownOutput.innerHTML = marked.parse(state.fullContent);
+                                    elements.markdownOutput.textContent = state.fullContent;
                                     scrollToBottom();
                                 } else if (data.type === 'complete' || data.done) {
-                                    // 生成完成
+                                    showGenerateStatus('🎉 生成完成！', 'success');
                                     elements.copyBtn.disabled = false;
                                 } else if (data.error) {
+                                    showGenerateStatus(`❌ 生成失败: ${data.error}`, 'error');
                                     showToast(`生成出错: ${data.error}`, 'error');
                                 }
                             } catch (e) {
@@ -705,7 +769,7 @@
                 <!-- 左侧：项目信息 -->
                 <div class="flex items-center gap-6">
                     <div class="flex items-center gap-2">
-                        <span class="font-semibold text-gray-700">Gradify v1.0</span>
+                        <span class="font-semibold text-gray-700">Gradify V1.5</span>
                         <span class="text-gray-300">|</span>
                         <span class="text-gray-500 text-sm">少儿英语作业反馈生成器</span>
                     </div>
