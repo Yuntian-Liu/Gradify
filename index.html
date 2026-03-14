@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradify - 英语作业反馈生成器</title>
+    <!-- Markdown渲染库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        surface: {
+                            bg: '#f8fafc',
+                            card: '#ffffff',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+                        'glow': '0 0 20px rgba(59, 130, 246, 0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 自定义滚动条 - 更细更精致 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+        }
+
+        /* 表单元素聚焦动画 - 更细腻 */
+        .input-focus {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .input-focus:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+
+        /* 按钮悬停效果 */
+        .btn-primary {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4), 0 8px 10px -6px rgba(59, 130, 246, 0.2);
+        }
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        /* 按钮加载动画 */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Toast 动画 - 弹性效果 */
+        @keyframes slideIn {
+            0% {
+                transform: translateX(100%) scale(0.8);
+                opacity: 0;
+            }
+            70% {
+                transform: translateX(-5%) scale(1.02);
+            }
+            100% {
+                transform: translateX(0) scale(1);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            0% {
+                transform: translateX(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(100%) scale(0.8);
+                opacity: 0;
+            }
+        }
+        .toast-enter {
+            animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .toast-exit {
+            animation: slideOut 0.3s ease forwards;
+        }
+
+        /* 打字机效果容器 */
+        .markdown-content {
+            line-height: 1.9;
+        }
+        .markdown-content p {
+            margin-bottom: 1.25em;
+        }
+        
+        /* 内容渐入动画 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .content-appear {
+            animation: fadeInUp 0.4s ease forwards;
+        }
+        
+        /* 卡片悬浮效果 */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* 液态玻璃质感 */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+        }
+        
+        .glass-card-blue {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-surface-bg font-sans antialiased">
+    <!-- 主容器 - 满屏布局 -->
+    <div class="h-screen flex overflow-hidden pb-16">
+        
+        <!-- 左侧控制面板 (40%) -->
+        <div class="w-[40%] bg-white border-r border-gray-100 flex flex-col">
+            <!-- 标题区 -->
+            <div class="px-8 py-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-semibold text-gray-800">Gradify v1.0</h1>
+                            <p class="text-xs text-gray-400">英语作业反馈生成器</p>
+                        </div>
+                    </div>
+                    <!-- 个人开发实践平台标识 - 液态玻璃质感 -->
+                    <div class="glass-card px-4 py-2 rounded-xl">
+                        <p class="text-xs font-medium text-primary-600">碳碳四键的个人开发实践项目-2</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 表单区域 - 内部滚动 -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar px-8 py-6">
+                <form id="feedbackForm" class="space-y-6">
+                    
+                    <!-- 基础信息区 -->
+                    <div class="space-y-4">
+                        <h2 class="text-sm font-medium text-gray-500 uppercase tracking-wide flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            基础信息
+                        </h2>
+                        <div class="bg-gray-50 rounded-2xl p-5 space-y-4">
+                            <!-- 学生英文名 -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">学生英文名</label>
+                                <input type="text" id="studentName" placeholder="如: Lisa" 
+                                    class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl input-focus text-gray-800 placeholder-gray-400">
+                            </div>
+                            
+                            <!-- 单元进度 - 新的交互方式 -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">单元进度</label>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-500 font-medium">U</span>
+                                    <input type="text" id="unitNumber" placeholder="7" maxlength="2"
+                                        class="w-16 px-3 py-2.5 bg-white border border-gray-200 rounded-xl input-focus text-gray-800 text-center placeholder-gray-400">
+                                    <span class="text-gray-400">-</span>
+                                    <select id="lessonType" 
+                                        class="w-20 px-3 py-2.5 bg-white border border-gray-200 rounded-xl input-focus text-gray-800 cursor-pointer">
+                                        <option value="L">L</option>
+                                        <option value="Day">Day</option>
+                                    </select>
+                                    <!-- 课时号下拉框，L和Day都需要选择 -->
+                                    <select id="lessonNumber" 
+                                        class="w-20 px-3 py-2.5 bg-white border border-gray-200 rounded-xl input-focus text-gray-800 cursor-pointer">
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                    </select>
+                                </div>
+                                <!-- 隐藏的反馈类型，自动根据选择设置 -->
+                                <input type="hidden" id="feedbackType" value="练习反馈">
+                            </div>
+                            
+                            <!-- 预习选项 -->
+                            <div class="pt-2 border-t border-gray-100">
+                                <label class="flex items-center gap-3 cursor-pointer group">
+                                    <input type="checkbox" id="hasPreview" 
+                                        class="w-5 h-5 text-primary-600 border-gray-300 rounded-lg focus:ring-primary-500 focus:ring-offset-0 cursor-pointer">
+                                    <span class="text-sm font-medium text-gray-700 group-hover:text-primary-600 transition-colors">包含预习作业</span>
+                                </label>
+                                <!-- 预习详情输入，仅当勾选预习时显示 -->
+                                <div id="previewWrapper" class="hidden mt-3 pl-8">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-gray-500 font-medium">U</span>
+                                        <input type="text" id="previewUnitNumber" placeholder="7" maxlength="2"
+                                            class="w-16 px-3 py-2 bg-white border border-gray-200 rounded-lg input-focus text-gray-800 text-center placeholder-gray-400">
+                                        <select id="previewType" 
+                                            class="w-20 px-3 py-2 bg-white border border-gray-200 rounded-lg input-focus text-gray-800 cursor-pointer">
+                                            <option value="A">A</option>
+                                            <option value="B">B</option>
+                                        </select>
+                                        <span class="text-gray-500 font-medium">Preview</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 问候时间 -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">家长问候时间</label>
+                                <select id="greetingTime" 
+                                    class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl input-focus text-gray-800 cursor-pointer">
+                                    <option value="早上">早上</option>
+                                    <option value="中午下午">中午/下午</option>
+                                    <option value="晚上" selected>晚上</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 表现评价区 -->
+                    <div class="space-y-4">
+                        <h2 class="text-sm font-medium text-gray-500 uppercase tracking-wide flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            表现评价
+                        </h2>
+                        <div class="bg-gray-50 rounded-2xl p-5 space-y-4">
+                            <!-- 正确率评级 -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">总体正确率评级</label>
+                                <select id="rating" 
+                                    class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl input-focus text-gray-800 cursor-pointer">
+                                    <option value="A+">A+ (全对)</option>
+                                    <option value="A" selected>A (不错)</option>
+                                    <option value="B">B (中规中矩)</option>
+                                    <option value="C">C (不太好)</option>
+                                </select>
+                            </div>
+                            <!-- 主要失分板块 -->
+                            <div id="lostSectionsWrapper" class="transition-all duration-200">
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">主要失分板块</label>
+                                <input type="text" id="lostSections" placeholder="如: 词汇和语法、阅读" 
+                                    class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl input-focus text-gray-800 placeholder-gray-400">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 核心错题速记区 -->
+                    <div class="space-y-4">
+                        <h2 class="text-sm font-medium text-gray-500 uppercase tracking-wide flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            核心错题速记
+                        </h2>
+                        <div class="bg-gray-50 rounded-2xl p-5">
+                            <textarea id="errorNotes" rows="5" placeholder="用简短短语记录错题，例如：&#10;Task3造句: 3.没懂what sports，选了颜色。6.主谓一致错&#10;阅读: 第2题细节题定位错误"
+                                class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl input-focus text-gray-800 placeholder-gray-400 resize-none text-sm leading-relaxed"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 未交/不规范情况区 -->
+                    <div class="space-y-4">
+                        <h2 class="text-sm font-medium text-gray-500 uppercase tracking-wide flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            未交/不规范情况
+                        </h2>
+                        <div class="bg-gray-50 rounded-2xl p-5">
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center gap-2.5 cursor-pointer group">
+                                    <input type="checkbox" name="issues" value="未交预习" 
+                                        class="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500 focus:ring-offset-0 cursor-pointer">
+                                    <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">未交预习</span>
+                                </label>
+                                <label class="flex items-center gap-2.5 cursor-pointer group">
+                                    <input type="checkbox" name="issues" value="缺作业页面" 
+                                        class="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500 focus:ring-offset-0 cursor-pointer">
+                                    <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">缺作业页面</span>
+                                </label>
+                                <label class="flex items-center gap-2.5 cursor-pointer group">
+                                    <input type="checkbox" name="issues" value="答题不规范" 
+                                        class="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500 focus:ring-offset-0 cursor-pointer">
+                                    <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">答题不规范</span>
+                                </label>
+                                <label class="flex items-center gap-2.5 cursor-pointer group">
+                                    <input type="checkbox" name="issues" value="预习有错题" 
+                                        class="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500 focus:ring-offset-0 cursor-pointer">
+                                    <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">预习有错题</span>
+                                </label>
+                                <label class="flex items-center gap-2.5 cursor-pointer group">
+                                    <input type="checkbox" name="issues" value="单词拼写错误" 
+                                        class="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500 focus:ring-offset-0 cursor-pointer">
+                                    <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">单词拼写错误</span>
+                                </label>
+                                <label class="flex items-center gap-2.5 cursor-pointer group">
+                                    <input type="checkbox" name="issues" value="听记未交" 
+                                        class="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500 focus:ring-offset-0 cursor-pointer">
+                                    <span class="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">听记未交</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 底部按钮区 -->
+            <div class="px-8 py-5 border-t border-gray-100 bg-white">
+                <button id="generateBtn" type="button"
+                    class="w-full py-3.5 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/30 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-primary-500 disabled:hover:shadow-lg">
+                    <svg id="btnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    <span id="btnText">生成反馈</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 右侧展示区 (60%) -->
+        <div class="w-[60%] bg-surface-bg flex flex-col relative">
+            <!-- 右侧标题栏 -->
+            <div class="px-8 py-6 border-b border-gray-100 bg-white/80 backdrop-blur-sm flex items-center justify-between">
+                <h2 class="text-sm font-medium text-gray-500 uppercase tracking-wide flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    生成结果
+                </h2>
+                <!-- 一键复制按钮 -->
+                <button id="copyBtn" 
+                    class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    <span>一键复制</span>
+                </button>
+            </div>
+
+            <!-- 内容展示区 -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+                <div id="outputContainer" class="bg-white rounded-2xl shadow-sm min-h-full p-8 relative">
+                    <!-- 空状态 -->
+                    <div id="emptyState" class="flex flex-col items-center justify-center h-full text-center py-20">
+                        <div class="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+                            <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-400 text-sm">填写左侧表单，点击"生成反馈"</p>
+                        <p class="text-gray-300 text-xs mt-1">生成的结果将在这里实时显示</p>
+                    </div>
+                    <!-- Markdown 内容 -->
+                    <div id="markdownOutput" class="markdown-content text-gray-700 text-[15px] whitespace-pre-wrap hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div id="toastContainer" class="fixed top-6 right-6 z-50 space-y-2"></div>
+
+    <script>
+        // ============================================================================
+        // 🎛️ 应用状态管理
+        // ============================================================================
+        const state = {
+            isGenerating: false,
+            fullContent: '',
+        };
+
+        // ============================================================================
+        // 🎯 DOM 元素引用
+        // ============================================================================
+        const elements = {
+            form: document.getElementById('feedbackForm'),
+            studentName: document.getElementById('studentName'),
+            // 新的单元进度相关元素
+            unitNumber: document.getElementById('unitNumber'),
+            lessonType: document.getElementById('lessonType'),
+            lessonNumber: document.getElementById('lessonNumber'),
+            // 预习相关元素
+            hasPreview: document.getElementById('hasPreview'),
+            previewWrapper: document.getElementById('previewWrapper'),
+            previewUnitNumber: document.getElementById('previewUnitNumber'),
+            previewType: document.getElementById('previewType'),
+            // 原有元素
+            feedbackType: document.getElementById('feedbackType'),
+            greetingTime: document.getElementById('greetingTime'),
+            rating: document.getElementById('rating'),
+            lostSections: document.getElementById('lostSections'),
+            lostSectionsWrapper: document.getElementById('lostSectionsWrapper'),
+            errorNotes: document.getElementById('errorNotes'),
+            issues: document.querySelectorAll('input[name="issues"]'),
+            generateBtn: document.getElementById('generateBtn'),
+            btnIcon: document.getElementById('btnIcon'),
+            btnText: document.getElementById('btnText'),
+            copyBtn: document.getElementById('copyBtn'),
+            emptyState: document.getElementById('emptyState'),
+            markdownOutput: document.getElementById('markdownOutput'),
+            toastContainer: document.getElementById('toastContainer'),
+        };
+
+        // ============================================================================
+        // 🔧 工具函数
+        // ============================================================================
+        
+        // Toast 提示
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-primary-500' : 'bg-red-500';
+            toast.className = `${bgColor} text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 toast-enter`;
+            toast.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                <span class="text-sm font-medium">${message}</span>
+            `;
+            elements.toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // 设置按钮 Loading 状态
+        function setButtonLoading(loading) {
+            state.isGenerating = loading;
+            elements.generateBtn.disabled = loading;
+            
+            if (loading) {
+                elements.btnIcon.innerHTML = `<svg class="w-5 h-5 spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+                elements.btnText.textContent = '生成中...';
+            } else {
+                elements.btnIcon.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`;
+                elements.btnText.textContent = '生成反馈';
+            }
+        }
+
+        // 自动滚动到底部
+        function scrollToBottom() {
+            const container = elements.markdownOutput.parentElement;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ============================================================================
+        // 📝 表单逻辑
+        // ============================================================================
+
+        // 1. 单元类型联动 - 自动设置反馈类型
+        function handleLessonTypeChange() {
+            const isDay = elements.lessonType.value === 'Day';
+            // 自动设置反馈类型：Day=伴学手册反馈，L=练习反馈
+            elements.feedbackType.value = isDay ? '伴学手册反馈' : '练习反馈';
+        }
+
+        // 2. 预习联动 - 勾选时显示预习输入框
+        function handlePreviewChange() {
+            const showPreview = elements.hasPreview.checked;
+            elements.previewWrapper.classList.toggle('hidden', !showPreview);
+        }
+
+        // 3. 评级联动 - A+ 时禁用失分板块
+        function handleRatingChange() {
+            const isPerfect = elements.rating.value === 'A+';
+            elements.lostSections.disabled = isPerfect;
+            elements.lostSectionsWrapper.style.opacity = isPerfect ? '0.5' : '1';
+            if (isPerfect) {
+                elements.lostSections.value = '';
+            }
+        }
+
+        // 绑定事件
+        elements.lessonType.addEventListener('change', handleLessonTypeChange);
+        elements.hasPreview.addEventListener('change', handlePreviewChange);
+        elements.rating.addEventListener('change', handleRatingChange);
+        
+        // 初始化
+        handleLessonTypeChange();
+        handleRatingChange();
+
+        // ============================================================================
+        // 🚀 生成反馈逻辑
+        // ============================================================================
+
+        async function generateFeedback() {
+            if (state.isGenerating) return;
+
+            // 验证必填字段
+            if (!elements.studentName.value.trim()) {
+                showToast('请输入学生英文名', 'error');
+                elements.studentName.focus();
+                return;
+            }
+            if (!elements.unitNumber.value.trim()) {
+                showToast('请输入单元号', 'error');
+                elements.unitNumber.focus();
+                return;
+            }
+
+            // 构建单元进度字符串
+            let unitProgress = '';
+            const unitNum = elements.unitNumber.value.trim();
+            const lessonType = elements.lessonType.value;
+            const lessonNum = elements.lessonNumber.value;
+            
+            if (lessonType === 'Day') {
+                unitProgress = `U${unitNum}Day${lessonNum}`;
+                
+                // 如果有预习，添加预习信息
+                if (elements.hasPreview.checked && elements.previewUnitNumber.value.trim()) {
+                    const previewType = elements.previewType.value;
+                    const previewUnit = elements.previewUnitNumber.value.trim();
+                    unitProgress += `&U${previewUnit}${previewType} Preview`;
+                }
+            } else {
+                unitProgress = `U${unitNum}${lessonType}${lessonNum}`;
+            }
+
+            // 收集表单数据
+            const formData = {
+                student_name: elements.studentName.value.trim(),
+                unit_progress: unitProgress,
+                feedback_type: elements.feedbackType.value,
+                greeting_time: elements.greetingTime.value,
+                rating: elements.rating.value,
+                lost_sections: elements.lostSections.value.trim(),
+                error_notes: elements.errorNotes.value.trim(),
+                issues: Array.from(elements.issues).filter(cb => cb.checked).map(cb => cb.value),
+            };
+
+            // 重置输出区
+            elements.emptyState.classList.add('hidden');
+            elements.markdownOutput.classList.remove('hidden');
+            elements.markdownOutput.textContent = '';
+            state.fullContent = '';
+
+            setButtonLoading(true);
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                
+                                if (data.type === 'header') {
+                                    state.fullContent += data.content;
+                                    elements.markdownOutput.innerHTML = marked.parse(state.fullContent);
+                                    scrollToBottom();
+                                } else if (data.content) {
+                                    state.fullContent += data.content;
+                                    elements.markdownOutput.innerHTML = marked.parse(state.fullContent);
+                                    scrollToBottom();
+                                } else if (data.type === 'footer') {
+                                    state.fullContent += data.content;
+                                    elements.markdownOutput.innerHTML = marked.parse(state.fullContent);
+                                    scrollToBottom();
+                                } else if (data.type === 'complete' || data.done) {
+                                    // 生成完成
+                                    elements.copyBtn.disabled = false;
+                                } else if (data.error) {
+                                    showToast(`生成出错: ${data.error}`, 'error');
+                                }
+                            } catch (e) {
+                                // 忽略解析错误
+                            }
+                        }
+                    }
+                }
+
+                setButtonLoading(false);
+                showToast('反馈生成完成！');
+
+            } catch (error) {
+                console.error('Generation error:', error);
+                setButtonLoading(false);
+                showToast('生成失败，请检查网络连接', 'error');
+            }
+        }
+
+        elements.generateBtn.addEventListener('click', generateFeedback);
+
+        // ============================================================================
+        // 📋 复制功能
+        // ============================================================================
+
+        elements.copyBtn.addEventListener('click', async () => {
+            if (!state.fullContent) return;
+            
+            try {
+                await navigator.clipboard.writeText(state.fullContent);
+                showToast('复制成功！');
+            } catch (err) {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = state.fullContent;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('复制成功！');
+            }
+        });
+
+        // ============================================================================
+        // ⌨️ 快捷键支持
+        // ============================================================================
+
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Enter 生成反馈
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                generateFeedback();
+            }
+        });
+    </script>
+    
+    <!-- 页脚 -->
+    <footer class="fixed bottom-0 left-0 right-0 glass-card border-t border-white/20 z-40">
+        <div class="max-w-screen-2xl mx-auto px-8 py-4">
+            <div class="flex items-center justify-between">
+                <!-- 左侧：项目信息 -->
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-gray-700">Gradify v1.0</span>
+                        <span class="text-gray-300">|</span>
+                        <span class="text-gray-500 text-sm">少儿英语作业反馈生成器</span>
+                    </div>
+                </div>
+                
+                <!-- 中间：液态玻璃质感ICP备案信息 -->
+                <div class="glass-card-blue px-4 py-2 rounded-xl flex items-center gap-4">
+                    <span class="text-xs font-medium text-primary-600">碳碳四键的个人开发实践项目-2</span>
+                    <span class="text-primary-300">|</span>
+                    <a href="https://beian.miit.gov.cn/" target="_blank" class="text-xs text-primary-500 hover:text-primary-700 transition-colors">
+                        蜀ICP备2026006689-2号
+                    </a>
+                </div>
+                
+                <!-- 右侧：GitHub和版权 -->
+                <div class="flex items-center gap-4">
+                    <a href="https://github.com/Yuntian-Liu/Gradify" target="_blank" class="flex items-center gap-1.5 text-gray-500 hover:text-primary-600 transition-colors text-sm">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                        <span>GitHub</span>
+                    </a>
+                    <span class="text-gray-400 text-sm">Copyright © LYT, 2026</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
