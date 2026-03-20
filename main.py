@@ -40,39 +40,39 @@ GREETING_TEMPLATES = {
 # 评级话术模板 - 多种随机选择 {lost_sections} 会被替换为主要失分板块
 RATING_TEMPLATES = {
     "A+": [
-        "收到宝贝的作业喽[Waddle]~咱们这次作业完成非常棒哦[Wow]！！！正确率百分百！全部都做对啦，继续保持呀💗~",
+        "收到宝贝的作业喽✌️~咱们这次作业完成非常棒哦👍！！！正确率百分百！全部都做对啦，继续保持呀💗~",
         "收到小朋友的作业啦😄，咱们这次作业完成得非常棒🎉！全都做对啦，继续保持哦💗~",
         "收到宝贝的作业啦☀️，咱们这次作业完成得超级棒！正确率100%，继续保持哦💗~",
     ],
     "A": [
-        "收到宝贝的作业喽[Waddle]~咱们这次作业完成很棒👍！正确率很高。只有「{lost_sections}」需要注意一下，知识掌握得不错！一起来看看吧⬇️：",
-        "收到宝贝的作业喽[Waddle]~咱们这次作业完成非常棒哦👍！！！正确率百分之九十！ 「{lost_sections}」有（）的小问题，我们一起看看吧⬇️：",
-        "收到宝贝的作业啦😄~咱们这次作业完成啦🎉！正确率不错的💗~词汇和语法部分各有一些问题，一起看看吧⬇️：",
-        "收到宝贝的作业啦😄~咱们这次作业完成得很不错🎉！正确率蛮高的💗~只有阅读部分有一个小问题，一起看看吧⬇️：",
-        "收到宝贝的作业喽[Waddle]~咱们这次作业完成非常棒哦👍！！！正确率百分之九十九！ 只有最后一个单词拼写上的小问题，需要注意一下拼写哦💗",
+        "收到宝贝的作业喽🎶~咱们这次作业完成很棒👍！正确率很高。只有「{lost_sections}」需要注意一下，知识掌握得不错！一起来看看吧⬇️：",
+        "收到宝贝的作业喽🐾~咱们这次作业完成非常棒哦👍！！！正确率百分之九十！ 「{lost_sections}」有一些小问题，我们一起看看吧⬇️：",
+        "收到宝贝的作业啦😄~咱们这次作业完成啦🎉！正确率不错的💗~「{lost_sections}」部分各有一些问题，一起看看吧⬇️：",
+        "收到宝贝的作业啦😄~咱们这次作业完成得很不错🎉！正确率蛮高的💗~只有「{lost_sections}」部分有一个小问题，一起看看吧⬇️：",
+        "收到宝贝的作业喽✌️~咱们这次作业完成非常棒哦👍！！！正确率百分之九十九！ 只有最后一个单词拼写上的小问题，需要注意一下拼写哦💗",
     ],
     "B": [
-        "收到宝贝的作业啦😄~咱们这次作业完成啦🎉！正确率ok💗~词汇和语法部分各有一些问题，一起看看吧⬇️：",
-        "收到宝贝的作业啦😄~咱们这次作业完成得OK🎉！正确率整体不错噢💗~主要是「{lost_sections}」分问题多点，可以看看哪里出问题啦，一起看看吧⬇️：",
+        "收到宝贝的作业啦😄~咱们这次作业完成啦🎉！正确率ok💗~「{lost_sections}」部分各有一些问题，一起看看吧⬇️：",
+        "收到宝贝的作业啦😄~咱们这次作业完成得OK🎉！正确率整体不错噢💗~主要是「{lost_sections}」部分问题多点，可以看看哪里出问题啦，一起看看吧⬇️：",
     ],
     "C": [
         "收到宝贝作业啦😄~咱们这次作业问题稍稍多一点，主要集中在「{lost_sections}」，不过没关系，我们一起来分析分析，下次就会更好啦！一起来看看吧⬇️：",
     ],
 }
 
-# 未交/不规范情况模板
+# 未交/不规范情况模板 - {preview_unit} 和 {preview_unit_full} 会被动态替换
 ISSUE_TEMPLATES = {
     "未交预习": [
-        "U1 Preview部分\n小朋友没有提交预习作业哦，看看是不是忘记啦~",
+        "{preview_unit} Preview部分\n小朋友没有提交预习作业哦，看看是不是忘记啦~",
     ],
     "缺作业页面": [
         "Task6 判断题\n小朋友还缺一页判断题没有交，看一看是不是忘记啦~",
     ],
-    "答题不规范": [
+    "判断不规范": [
         "Task6 判断部分\n这部分小朋友答案没有问题，主要注意题干要求需要用T、F表达正误哦，而不是用勾叉~",
     ],
     "预习有错题": [
-        "U1A Preview部分\n预习部分小朋友错了1个小题，可以结合材料再看看哦💗！",
+        "{preview_unit_full} Preview部分\n预习部分小朋友错了1个小题，可以结合材料再看看哦💗！",
     ],
     "单词拼写错误": [
         "Vocabulary部分\n这部分小朋友答案没有问题，但是需要注意单词拼写不要出错哟~",
@@ -166,10 +166,25 @@ def build_header(data: FeedbackRequest) -> str:
     return "\n".join(lines)
 
 
-def build_footer(issues: list[str]) -> str:
+def build_footer(issues: list[str], unit_progress: str = "") -> str:
     """构建尾部文本（第三段）"""
     if not issues:
         return ""
+    
+    # 从 unit_progress 中解析预习单元信息
+    # 格式可能是: "U7Day1&U2B Preview" 或 "U7Day1"
+    preview_unit = "U1"  # 默认值
+    preview_unit_full = "U1A"  # 默认值
+    
+    if "&" in unit_progress:
+        # 提取预习部分，如 "U2B Preview"
+        preview_part = unit_progress.split("&")[1]
+        if "Preview" in preview_part:
+            # 提取 "U2B" 部分
+            preview_unit_full = preview_part.replace(" Preview", "")
+            # 提取 "U2" 部分（去掉最后的 A 或 B）
+            if preview_unit_full and preview_unit_full[-1] in ['A', 'B']:
+                preview_unit = preview_unit_full[:-1]
     
     parts = []
     for issue in issues:
@@ -177,6 +192,9 @@ def build_footer(issues: list[str]) -> str:
             # 随机选择模板
             template_list = ISSUE_TEMPLATES[issue]
             template = random.choice(template_list)
+            # 替换占位符
+            template = template.replace("{preview_unit}", preview_unit)
+            template = template.replace("{preview_unit_full}", preview_unit_full)
             parts.append(template)
     
     # 用换行符连接（每个段落之间有换行，但中间没有空行）
@@ -238,7 +256,7 @@ async def generate_feedback(data: FeedbackRequest):
                 yield chunk
         
         # 第三段：尾部（代码生成）
-        footer = build_footer(data.issues)
+        footer = build_footer(data.issues, data.unit_progress)
         if footer:
             # footer内容之前添加换行
             footer_with_newline = "\n" + footer
