@@ -142,26 +142,27 @@ class FeedbackRequest(BaseModel):
 # 辅助函数
 # ============================================================================
 
+def build_greeting(data: FeedbackRequest) -> str:
+    """生成家长问候语（单独发送，用于群聊回复）"""
+    greeting_list = GREETING_TEMPLATES.get(data.greeting_time, GREETING_TEMPLATES["晚上"])
+    return random.choice(greeting_list)
+
+
 def build_header(data: FeedbackRequest) -> str:
-    """构建头部文本（第一段）"""
+    """构建头部文本（批改记录用，不含问候语）"""
     lines = []
-    
+
     # 标题
     title = f"{data.student_name} {data.unit_progress} {data.feedback_type}"
     lines.append(title)
-    
-    # 问候语 - 随机选择
-    greeting_list = GREETING_TEMPLATES.get(data.greeting_time, GREETING_TEMPLATES["晚上"])
-    greeting = random.choice(greeting_list)
-    lines.append(greeting)
-    
+
     # 评级话术 - 随机选择
     rating_list = RATING_TEMPLATES.get(data.rating, RATING_TEMPLATES["B"])
     rating_text = random.choice(rating_list)
     if "{lost_sections}" in rating_text:
         rating_text = rating_text.format(lost_sections=data.lost_sections or "部分题目")
     lines.append(rating_text)
-    
+
     return "\n".join(lines)
 
 
@@ -220,7 +221,11 @@ async def generate_feedback(data: FeedbackRequest):
     """生成反馈 - SSE 流式接口"""
     
     async def event_stream() -> AsyncGenerator[str, None]:
-        # 第一段：头部（代码生成）
+        # 家长问候语（单独发送，用于群聊回复）
+        greeting = build_greeting(data)
+        yield f"data: {json.dumps({'type': 'greeting', 'content': greeting})}\n\n"
+
+        # 第一段：头部（代码生成，不含问候语）
         header = build_header(data)
         yield f"data: {json.dumps({'type': 'header', 'content': header})}\n\n"
         

@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-03-20
+
+### 🎨 Visual & UX Upgrade
+
+Welcome to Gradify v2.0.0! This release brings a complete visual redesign and enhanced workflow for group chat interactions.
+
+#### ✨ Added
+
+- **Independent Greeting Card System**
+  - Separate greeting display with dedicated copy button
+  - Designed for group chat reply scenarios (家长群回复)
+  - Greeting sent before feedback for better workflow
+
+- **Enhanced Copy Functionality**
+  - "Copy All" button combines greeting + feedback
+  - Individual copy buttons for greeting and feedback sections
+  - Clipboard API with fallback support
+
+- **Improved Unit Progress Input**
+  - Split input: Unit Number + Lesson Type (L/Day) + Lesson Number
+  - Auto-detection of feedback type based on lesson type
+  - Preview section now supports A/B type selection
+
+- **Real-time Generation Status**
+  - Progress indicators during generation stages
+  - Toast notifications for user actions
+
+#### 🔄 Changed
+
+- **Complete UI Redesign**
+  - New warm neutral color palette (inspired by Anthropic)
+  - Typography upgrade to Inter/SF Pro font family
+  - Refined shadow and border radius system
+  - Glassmorphism elements with subtle transparency
+
+- **Backend Architecture Refactor**
+  - New `build_greeting()` function for standalone greeting generation
+  - Streamlined `build_header()` for feedback content only
+  - SSE stream now sends greeting before header content
+
+#### 🛠️ Technical Details
+
+| Component | Changes |
+|-----------|---------|
+| Color System | Added warm/accent/brown palettes |
+| Typography | Inter, SF Pro Display, SF Pro Text |
+| Backend | Greeting extraction, improved SSE flow |
+| Copy UX | Three-tier copy strategy |
+
+---
+
 ## [1.0.0] - 2026-03-14
 
 ### 🎉 Initial Release
