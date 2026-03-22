@@ -63,7 +63,7 @@ RATING_TEMPLATES = {
 # 未交/不规范情况模板 - {preview_unit} 和 {preview_unit_full} 会被动态替换
 ISSUE_TEMPLATES = {
     "未交预习": [
-        "{preview_unit} Preview部分\n小朋友没有提交预习作业哦，看看是不是忘记啦~",
+        "{preview_unit_full} Preview部分\n小朋友没有提交预习作业哦，看看是不是忘记啦~",
     ],
     "缺作业页面": [
         "Task6 判断题\n小朋友还缺一页判断题没有交，看一看是不是忘记啦~",
