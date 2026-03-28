@@ -504,6 +504,57 @@
       range.insertNode(node);
       sel.removeAllRanges();
     }
+    function unwrapElement(el){
+      if(!el || !el.parentNode) return;
+      const frag = document.createDocumentFragment();
+      while(el.firstChild) frag.appendChild(el.firstChild);
+      el.parentNode.replaceChild(frag, el);
+    }
+    function hasHighlightStyle(el){
+      if(!el || !el.style) return false;
+      const bg = (el.style.backgroundColor || "").trim().toLowerCase();
+      const bg2 = (el.style.background || "").trim().toLowerCase();
+      return Boolean(bg && bg !== "transparent") || (bg2.includes("rgb") || bg2.includes("#"));
+    }
+    function clearHighlightStyle(el){
+      if(!el || !el.style) return;
+      el.style.removeProperty("background-color");
+      el.style.removeProperty("background");
+      if(!el.getAttribute("style")) unwrapElement(el);
+    }
+    function getHighlightElementsInRange(range){
+      const root = elements.markdownOutput;
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+      const hits = [];
+      let node = walker.currentNode;
+      while(node){
+        if(range.intersectsNode(node)){
+          if(node.tagName==="MARK"){
+            hits.push(node);
+          }else if(hasHighlightStyle(node)){
+            hits.push(node);
+          }
+        }
+        node = walker.nextNode();
+      }
+      return hits;
+    }
+    function toggleHighlightSelection(){
+      elements.markdownOutput.focus();
+      const sel = window.getSelection();
+      if(!sel || !sel.rangeCount || sel.isCollapsed) return;
+      const range = sel.getRangeAt(0);
+      const highlighted = getHighlightElementsInRange(range);
+      if(highlighted.length){
+        highlighted.forEach((el)=>{
+          if(el.tagName==="MARK") unwrapElement(el);
+          else clearHighlightStyle(el);
+        });
+        return;
+      }
+      applyEditorCommand("hiliteColor","#fff59d");
+      applyEditorCommand("backColor","#fff59d");
+    }
     function renderFeedback(){
       if(state.viewMode==="raw"){
         elements.markdownOutput.textContent = state.fullContent;
@@ -886,10 +937,7 @@
       saveFormDraft();
     });
     document.getElementById("boldBtn").addEventListener("click",()=>applyEditorCommand("bold"));
-    document.getElementById("highlightBtn").addEventListener("click",()=>{
-      applyEditorCommand("hiliteColor","#fff59d");
-      applyEditorCommand("backColor","#fff59d");
-    });
+    document.getElementById("highlightBtn").addEventListener("click",toggleHighlightSelection);
     document.getElementById("copyTaskBtn").addEventListener("click",()=>{const n=document.getElementById("quickTaskNumber").value,c=document.getElementById("quickTaskContent").value.trim(); if(!c){showToast("请输入Task内容","error"); return;} copyToClipboard(`**Task${n} ${c}部分**`,"Task内容复制成功");});
     document.getElementById("copyReadingBtn").addEventListener("click",()=>{const u=document.getElementById("quickReadingUnit").value.trim(); if(!u){showToast("请输入单元号","error"); return;} const t=document.getElementById("quickReadingType").value; copyToClipboard(`**Reading Skill ${u}${t}**`,"Reading Skill复制成功");});
     document.getElementById("copyVocabBtn").addEventListener("click",()=>copyToClipboard("**Vocabulary部分**","Vocabulary部分复制成功"));

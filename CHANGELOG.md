@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.1] - 2026-03-28
+
+### Fixed
+- Fixed the highlight toggle bug in `Feedback Draft` editor: highlighted text can now be un-highlighted by clicking `Highlight` again.
+
+### Improved
+- Improved cross-browser compatibility for highlight handling by covering both `<mark>` tags and inline `background-color` styles.
+- Improved editing consistency and stability for manual post-generation refinement.
+
 ## [3.0.0] - 2026-03-28
 
 ### Added
@@ -32,4 +41,3 @@ All notable changes to this project will be documented in this file.
 
 ### Notes
 - v3.0 is a major UX + AI capability release focused on usability, transparency, and runtime stability.
-
