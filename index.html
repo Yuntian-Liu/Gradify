@@ -1,1118 +1,942 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gradify - 英语作业反馈生成器</title>
-    <!-- Markdown渲染库 -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        // 温暖中性色调（参考Anthropic）
-                        warm: {
-                            50: '#faf8f5',
-                            100: '#f5f3f0',
-                            200: '#ebe8e3',
-                            300: '#ddd8d0',
-                            400: '#c4bdb2',
-                            500: '#a89f91',
-                            600: '#8b7f6f',
-                            700: '#6d6254',
-                            800: '#4d4539',
-                            900: '#2d2820',
-                        },
-                        // 强调色：温暖的绿色
-                        accent: {
-                            50: '#f0f7f2',
-                            100: '#d9ede0',
-                            200: '#b3dbc1',
-                            300: '#8cc9a2',
-                            400: '#66b783',
-                            500: '#4a7c59',
-                            600: '#3d6549',
-                            700: '#304e39',
-                            800: '#233729',
-                            900: '#162019',
-                        },
-                        // 辅助色：温暖的棕色
-                        brown: {
-                            50: '#faf6f1',
-                            100: '#f0e8dd',
-                            200: '#e1d1bb',
-                            300: '#d2ba99',
-                            400: '#c3a377',
-                            500: '#8b7355',
-                            600: '#6e5c44',
-                            700: '#514533',
-                            800: '#342e22',
-                            900: '#171711',
-                        },
-                    },
-                    fontFamily: {
-                        // 多样化字体匹配
-                        display: ['"Inter Display"', '"SF Pro Display"', 'system-ui', 'sans-serif'],
-                        body: ['"Inter"', '"SF Pro Text"', 'system-ui', 'sans-serif'],
-                        light: ['"Inter Light"', '"SF Pro Text"', 'system-ui', 'sans-serif'],
-                        sans: ['"Inter"', '"SF Pro Text"', 'system-ui', 'sans-serif'],
-                    },
-                    // 精致的阴影系统
-                    boxShadow: {
-                        'subtle': '0 1px 2px rgba(0, 0, 0, 0.04)',
-                        'soft': '0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)',
-                        'medium': '0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)',
-                    },
-                    // 精致的圆角
-                    borderRadius: {
-                        'xl': '12px',
-                        '2xl': '16px',
-                        '3xl': '20px',
-                    },
-                }
-            }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gradify - Homework Feedback Studio</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            coral: "#ff6b35",
+            cyan: "#2ec4b6",
+            slate: "#3a506b"
+          }
         }
-    </script>
-    <style>
-        /* 自定义滚动条 - 精致克制 */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(139, 125, 85, 0.2);
-            border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(139, 125, 85, 0.4);
-        }
-
-        /* 表单元素聚焦动画 - 精致克制 */
-        .input-focus {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .input-focus:focus {
-            outline: none;
-            border-color: #8b7355;
-            box-shadow: 0 0 0 3px rgba(139, 117, 85, 0.08);
-            transform: translateY(-1px);
-        }
-
-        /* 按钮悬停效果 - 精致克制 */
-        .btn-elegant {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .btn-elegant:hover:not(:disabled) {
-            transform: translateY(-1px);
-            opacity: 0.85;
-        }
-        .btn-elegant:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        /* Toast 动画 - 精致克制 */
-        @keyframes slideIn {
-            0% {
-                transform: translateX(100%) scale(0.95);
-                opacity: 0;
-            }
-            100% {
-                transform: translateX(0) scale(1);
-                opacity: 1;
-            }
-        }
-        @keyframes slideOut {
-            0% {
-                transform: translateX(0) scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: translateX(100%) scale(0.95);
-                opacity: 0;
-            }
-        }
-        .toast-enter {
-            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-        .toast-exit {
-            animation: slideOut 0.2s ease forwards;
-        }
-
-        /* 打字机效果容器 */
-        .markdown-content {
-            line-height: 1.8;
-        }
-        .markdown-content p {
-            margin-bottom: 1.2em;
-        }
-        /* 修复下划线导致的横线显示问题 */
-        .markdown-content u {
-            text-decoration: none;
-        }
-        .markdown-content hr {
-            display: none !important;
-            visibility: hidden;
-            height: 0;
-            margin: 0;
-            padding: 0;
-        }
-        /* 修复连续下划线显示为横线的问题 */
-        .markdown-content span {
-            text-decoration: none !important;
-        }
-        /* 移除所有可能的边框线 */
-        .markdown-content * {
-            border: none !important;
-        }
-        /* 移除任何可能产生横线的样式 */
-        .markdown-content::before,
-        .markdown-content::after {
-            display: none !important;
-            content: none !important;
-        }
-        
-        /* 内容渐入动画 - 精致克制 */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .content-appear {
-            animation: fadeInUp 0.4s ease forwards;
-        }
-        
-        /* 卡片悬浮效果 - 精致克制 */
-        .card-elegant {
-            transition: all 0.2s ease;
-        }
-        .card-elegant:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-        }
-        
-        /* 问候卡片样式 - 温暖精致 */
-        .greeting-card {
-            background: #faf8f5;
-            border: 1px solid rgba(139, 117, 85, 0.12);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-            transition: all 0.2s ease;
-        }
-        .greeting-card:hover {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-        }
-        .greeting-card-enter {
-            animation: fadeInUp 0.4s ease forwards;
-        }
-        
-        /* 输出框样式 - 干净整洁 */
-        .output-box {
-            border: 1px solid rgba(139, 117, 85, 0.12);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-            transition: all 0.2s ease;
-        }
-        .output-box:hover {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-        }
-
-        /* 学生反馈区域样式 - 突出重要 */
-        .feedback-section {
-            background: #faf8f5;
-            border: 1px solid rgba(139, 117, 85, 0.15);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-    </style>
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-a:#fff6eb; --bg-b:#e6fbf8; --panel:rgba(255,255,255,.88); --line:rgba(18,18,18,.12);
+      --text:#1a1a1a; --muted:#5a5a5a; --soft:0 18px 44px rgba(0,0,0,.09);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;color:var(--text);
+      background:
+        radial-gradient(circle at 7% 9%, rgba(255,107,53,.2), transparent 28%),
+        radial-gradient(circle at 90% 4%, rgba(46,196,182,.22), transparent 30%),
+        linear-gradient(130deg,var(--bg-a),var(--bg-b));
+      font-family:'Space Grotesk','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;
+    }
+    .grain::before{
+      content:"";position:fixed;inset:0;pointer-events:none;opacity:.3;z-index:-1;
+      background-image:radial-gradient(rgba(0,0,0,.22) .45px, transparent .45px);background-size:11px 11px;
+    }
+    .shell{max-width:1560px;margin:0 auto;padding:18px 18px 14px;display:grid;grid-template-rows:auto 1fr;min-height:100vh;gap:14px}
+    .header-wrap{border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(9px);border-radius:22px;box-shadow:var(--soft);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+    .brand-chip{width:44px;height:44px;border-radius:14px;background:linear-gradient(145deg,#fef2da,#ffd4a8);display:grid;place-items:center;color:#fff;box-shadow:0 10px 26px rgba(255,107,53,.28), inset 0 1px 0 rgba(255,255,255,.6);flex-shrink:0;border:1px solid rgba(255,130,68,.35)}
+    .meta-chip{
+      display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;border:1px solid rgba(0,0,0,.12);
+      background:linear-gradient(150deg,rgba(255,255,255,.92),rgba(255,247,239,.92));box-shadow:0 8px 20px rgba(0,0,0,.06)
+    }
+    .meta-divider{width:1px;height:22px;background:rgba(0,0,0,.15)}
+    .gh-chip{
+      display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:14px;border:1px solid rgba(0,0,0,.13);
+      background:linear-gradient(150deg,#ffffff,#f2f4f8);font-weight:700;color:#1f2a3a;transition:transform .2s ease, box-shadow .2s ease
+    }
+    .gh-chip:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,.1)}
+    .workspace{min-height:0;display:grid;grid-template-columns:1.1fr 1.35fr;gap:14px}
+    .panel{min-height:0;border:1px solid var(--line);border-radius:22px;background:var(--panel);backdrop-filter:blur(9px);box-shadow:var(--soft);overflow:hidden}
+    .left-panel{display:grid;grid-template-rows:1fr auto auto}
+    .panel-scroll{min-height:0;overflow:auto;padding:18px}
+    .custom-scrollbar::-webkit-scrollbar{width:8px;height:8px}
+    .custom-scrollbar::-webkit-scrollbar-thumb{background:rgba(0,0,0,.16);border-radius:20px}
+    .section-card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:18px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.05);margin-bottom:14px;transition:transform .22s ease, box-shadow .22s ease}
+    .section-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.1)}
+    .section-title{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#4f4f4f;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-weight:700}
+    .input-solid{width:100%;border:1px solid rgba(0,0,0,.14);background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease}
+    .input-solid:focus{outline:none;border-color:#2ec4b6;box-shadow:0 0 0 4px rgba(46,196,182,.15);transform:translateY(-1px)}
+    .quick-tools{margin:10px 14px 0;border:1px solid rgba(0,0,0,.1);border-radius:14px;background:linear-gradient(155deg,#fff,#f6fffc);padding:12px}
+    .generate-wrap{padding:14px 18px 18px;border-top:1px solid rgba(0,0,0,.08);background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(255,255,255,.98))}
+    .issue-dock{margin:0 18px 10px;border:1px solid rgba(0,0,0,.1);border-radius:14px;background:linear-gradient(155deg,#fff,#fff7ef);padding:12px}
+    .issue-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid rgba(0,0,0,.12);background:#fff}
+    .model-chip{
+      display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;
+      border:1px solid rgba(0,0,0,.12);background:linear-gradient(130deg,rgba(255,107,53,.14),rgba(46,196,182,.14));color:#1f4b47
+    }
+    .model-dot{width:8px;height:8px;border-radius:999px;background:#2ec4b6;box-shadow:0 0 0 4px rgba(46,196,182,.15)}
+    .btn-main{width:100%;border:0;color:#fff;border-radius:14px;padding:12px 16px;font-weight:700;background:linear-gradient(130deg,#ff6b35,#2ec4b6);box-shadow:0 14px 26px rgba(52,62,79,.24);transition:transform .22s ease, box-shadow .22s ease, filter .22s ease}
+    .btn-main:hover:not(:disabled){transform:translateY(-2px);filter:saturate(1.08);box-shadow:0 20px 30px rgba(52,62,79,.28)}
+    .btn-main:disabled{opacity:.6;cursor:not-allowed}
+    .right-head{border-bottom:1px solid rgba(0,0,0,.08);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:linear-gradient(120deg,rgba(255,107,53,.06),rgba(46,196,182,.08))}
+    .status-pill{font-size:12px;border:1px solid rgba(0,0,0,.1);border-radius:999px;padding:5px 10px;color:#254a46;background:rgba(255,255,255,.88)}
+    .output-scroll{min-height:0;height:calc(100% - 66px);overflow:auto;padding:14px}
+    .output-frame{min-height:100%;border-radius:18px;border:1px solid rgba(0,0,0,.09);background:#fff;padding:18px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
+    .greeting-card{border:1px solid rgba(46,196,182,.35);background:linear-gradient(140deg,rgba(235,255,251,.9),rgba(255,255,255,.95));border-radius:14px;padding:12px;margin-bottom:12px;animation:fadeUp .28s ease}
+    .markdown-content{line-height:1.9;white-space:pre-wrap;font-size:15px;color:#2d2d2d}
+    .markdown-content h1,.markdown-content h2,.markdown-content h3{font-size:1.02em;line-height:1.5;font-weight:800;margin:.25rem 0 .4rem;color:#0f4e47}
+    .markdown-content p{margin:.2rem 0 .55rem}
+    .markdown-content strong{background:linear-gradient(120deg, rgba(255,191,105,.38), rgba(46,196,182,.24));padding:0 .3em;border-radius:.3em}
+    .markdown-content hr{display:none!important}
+    .markdown-content u,.markdown-content ins,.markdown-content del{text-decoration:none!important}
+    .markdown-content[contenteditable="true"]{border:1px dashed transparent;padding:6px;border-radius:8px}
+    .markdown-content[contenteditable="true"]:focus{outline:none;border-color:rgba(46,196,182,.45);background:rgba(46,196,182,.03)}
+    .assistant-dock{position:fixed;right:16px;bottom:24px;z-index:45;display:flex;align-items:center;gap:10px}
+    .assistant-fab{
+      width:52px;height:52px;border-radius:16px;border:1px solid rgba(0,0,0,.12);
+      background:linear-gradient(150deg,#ffb280,#ff7b4a 52%,#25b3a7);
+      color:#fff;display:grid;place-items:center;
+      box-shadow:0 16px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.48);transition:transform .25s ease, box-shadow .25s ease, filter .25s ease;
+    }
+    .assistant-fab:hover{transform:translateY(-2px) scale(1.03);filter:saturate(1.05);box-shadow:0 20px 36px rgba(0,0,0,.26)}
+    .assistant-hover-text{
+      max-width:0;opacity:0;overflow:hidden;white-space:nowrap;padding:0;border-radius:999px;
+      border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);backdrop-filter:blur(8px);
+      font-size:14px;font-weight:800;font-family:'Sora','Space Grotesk','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;
+      letter-spacing:.02em;color:#1f4b47;transition:max-width .35s ease, opacity .22s ease, padding .22s ease;
+    }
+    .assistant-dock:hover .assistant-hover-text{max-width:280px;opacity:1;padding:10px 14px}
+    .assistant-panel{
+      position:fixed;right:24px;bottom:96px;z-index:46;width:min(520px,calc(100vw - 28px));height:520px;
+      border:1px solid rgba(0,0,0,.12);border-radius:18px;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);
+      box-shadow:0 22px 46px rgba(0,0,0,.2);display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;
+    }
+    .icon-btn{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;border:1px solid rgba(0,0,0,.15);background:#fff;transition:all .2s ease}
+    .icon-btn:hover{background:#f7f7f7;transform:translateY(-1px)}
+    .icon-btn.is-active{background:rgba(46,196,182,.12);border-color:rgba(46,196,182,.45);color:#0f6d63}
+    .assistant-msgs{overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+    .assistant-bubble{padding:9px 11px;border-radius:12px;line-height:1.6;font-size:13px;white-space:pre-wrap}
+    .assistant-user{align-self:flex-end;max-width:85%;background:#f3edff;border:1px solid rgba(132,104,211,.32)}
+    .assistant-ai{align-self:flex-start;max-width:90%;background:#fff5ec;border:1px solid rgba(255,107,53,.3)}
+    .assistant-md p{margin:.1rem 0 .45rem}
+    .assistant-md strong{font-weight:800}
+    .assistant-md code{padding:.08rem .3rem;border-radius:.3rem;background:rgba(0,0,0,.06)}
+    .assistant-md hr{display:none}
+    .assistant-meta{margin-top:6px;font-size:11px;color:#6b7280}
+    .assistant-inline-images{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
+    .assistant-inline-images img{width:100%;height:84px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,0,0,.12)}
+    .assistant-panel.hidden{display:none}
+    #toastContainer{pointer-events:none}
+    #toastContainer > div{pointer-events:auto}
+    .field-meta{margin-top:8px;text-align:right;font-size:12px;color:var(--muted)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @media (max-width:1200px){.workspace{grid-template-columns:1fr}.right-panel{min-height:58vh}}
+    @media (max-width:768px){.shell{padding:12px 10px}.header-wrap,.panel{border-radius:16px}.section-card{border-radius:14px}.assistant-dock{right:12px;bottom:14px}.assistant-panel{right:12px;bottom:82px;height:58vh;width:calc(100vw - 24px)}}
+    @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+  </style>
 </head>
-<body class="bg-warm-50 font-body antialiased">
-    <!-- 主容器 - 满屏布局 -->
-    <div class="h-screen flex overflow-hidden pb-16">
-        
-        <!-- 左侧控制面板 (40%) -->
-        <div class="w-[40%] bg-white border-r border-warm-200 flex flex-col">
-            <!-- 标题区 -->
-            <div class="px-8 py-6 border-b border-warm-100">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-accent-500 rounded-xl flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                            </svg>
-                        </div>
-                        <div>
-<h1 class="text-xl font-display font-semibold text-warm-800">Gradify V2.5</h1>
-                            <p class="text-xs font-light text-warm-500">英语作业反馈生成器</p>
-                        </div>
-                    </div>
-                    <!-- 个人开发实践平台标识 -->
-                    <div class="px-4 py-2 bg-warm-50 rounded-xl border border-warm-100">
-                        <p class="text-xs font-medium text-accent-600">碳碳四键的个人开发实践项目-2</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 表单区域 - 内部滚动 -->
-            <div class="flex-1 overflow-y-auto custom-scrollbar px-8 py-6">
-                <form id="feedbackForm" class="space-y-6">
-                    
-                    <!-- 基础信息区 -->
-                    <div class="space-y-4">
-                        <h2 class="text-sm font-medium text-warm-600 uppercase tracking-wide flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                            </svg>
-                            基础信息
-                        </h2>
-                        <div class="bg-warm-50 rounded-2xl p-5 space-y-4">
-                            <!-- 学生英文名 -->
-                            <div>
-                                <label class="block text-sm font-medium text-warm-700 mb-1.5">学生英文名</label>
-                                <input type="text" id="studentName" placeholder="如: Lisa" 
-                                    class="w-full px-4 py-2.5 bg-white border border-warm-200 rounded-xl input-focus text-warm-800 placeholder-warm-400">
-                            </div>
-                            
-                            <!-- 单元进度 - 新的交互方式 -->
-                            <div>
-                                <label class="block text-sm font-medium text-warm-700 mb-1.5">单元进度</label>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-warm-500 font-medium">U</span>
-                                    <input type="text" id="unitNumber" placeholder="7" maxlength="2"
-                                        class="w-16 px-3 py-2.5 bg-white border border-warm-200 rounded-xl input-focus text-warm-800 text-center placeholder-warm-400">
-                                    <span class="text-warm-400">-</span>
-                                    <select id="lessonType" 
-                                        class="w-20 px-3 py-2.5 bg-white border border-warm-200 rounded-xl input-focus text-warm-800 cursor-pointer">
-                                        <option value="L">L</option>
-                                        <option value="Day">Day</option>
-                                    </select>
-                                    <!-- 课时号下拉框，L和Day都需要选择 -->
-                                    <select id="lessonNumber" 
-                                        class="w-20 px-3 py-2.5 bg-white border border-warm-200 rounded-xl input-focus text-warm-800 cursor-pointer">
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                    </select>
-                                </div>
-                                <!-- 隐藏的反馈类型，自动根据选择设置 -->
-                                <input type="hidden" id="feedbackType" value="练习反馈">
-                            </div>
-                            
-                            <!-- 预习选项 -->
-                            <div class="pt-2 border-t border-warm-100">
-                                <label class="flex items-center gap-3 cursor-pointer group">
-                                    <input type="checkbox" id="hasPreview" 
-                                        class="w-5 h-5 text-accent-600 border-warm-300 rounded-lg focus:ring-accent-500 focus:ring-offset-0 cursor-pointer">
-                                    <span class="text-sm font-medium text-warm-700 group-hover:text-accent-600 transition-colors">包含预习作业</span>
-                                </label>
-                                <!-- 预习详情输入，仅当勾选预习时显示 -->
-                                <div id="previewWrapper" class="hidden mt-3 pl-8">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-warm-500 font-medium">U</span>
-                                        <input type="text" id="previewUnitNumber" placeholder="7" maxlength="2"
-                                            class="w-16 px-3 py-2 bg-white border border-warm-200 rounded-lg input-focus text-warm-800 text-center placeholder-warm-400">
-                                        <select id="previewType" 
-                                            class="w-20 px-3 py-2 bg-white border border-warm-200 rounded-lg input-focus text-warm-800 cursor-pointer">
-                                            <option value="A">A</option>
-                                            <option value="B">B</option>
-                                        </select>
-                                        <span class="text-warm-500 font-medium">Preview</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- 问候时间 -->
-                            <div>
-                                <label class="block text-sm font-medium text-warm-700 mb-1.5">家长问候时间</label>
-                                <select id="greetingTime" 
-                                    class="w-full px-4 py-2.5 bg-white border border-warm-200 rounded-xl input-focus text-warm-800 cursor-pointer">
-                                    <option value="早上">早上</option>
-                                    <option value="中午下午">中午/下午</option>
-                                    <option value="晚上" selected>晚上</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 表现评价区 -->
-                    <div class="space-y-4">
-                        <h2 class="text-sm font-medium text-warm-600 uppercase tracking-wide flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            表现评价
-                        </h2>
-                        <div class="bg-warm-50 rounded-2xl p-5 space-y-4">
-                            <!-- 正确率评级 -->
-                            <div>
-                                <label class="block text-sm font-medium text-warm-700 mb-1.5">总体正确率评级</label>
-                                <select id="rating" 
-                                    class="w-full px-4 py-2.5 bg-white border border-warm-200 rounded-xl input-focus text-warm-800 cursor-pointer">
-                                    <option value="A+">A+ (全对)</option>
-                                    <option value="A" selected>A (不错)</option>
-                                    <option value="B">B (中规中矩)</option>
-                                    <option value="C">C (不太好)</option>
-                                </select>
-                            </div>
-                            <!-- 主要失分板块 -->
-                            <div id="lostSectionsWrapper" class="transition-all duration-200">
-                                <label class="block text-sm font-medium text-warm-700 mb-1.5">主要失分板块</label>
-                                <input type="text" id="lostSections" placeholder="如: 词汇和语法、阅读" 
-                                    class="w-full px-4 py-2.5 bg-white border border-warm-200 rounded-xl input-focus text-warm-800 placeholder-warm-400">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 核心错题速记区 -->
-                    <div class="space-y-4">
-                        <h2 class="text-sm font-medium text-warm-600 uppercase tracking-wide flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                            </svg>
-                            核心错题速记
-                        </h2>
-                        <div class="bg-warm-50 rounded-2xl p-5">
-                            <textarea id="errorNotes" rows="5" placeholder="用简短短语记录错题，例如：&#10;Task3造句: 3.没懂what sports，选了颜色。6.主谓一致错&#10;阅读: 第2题细节题定位错误"
-                                class="w-full px-4 py-3 bg-white border border-warm-200 rounded-xl input-focus text-warm-800 placeholder-warm-400 resize-none text-sm leading-relaxed"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- 未交/不规范情况区 -->
-                    <div class="space-y-4">
-                        <h2 class="text-sm font-medium text-warm-600 uppercase tracking-wide flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
-                            未交/不规范情况
-                        </h2>
-                        <div class="bg-warm-50 rounded-2xl p-5">
-                            <div class="grid grid-cols-2 gap-3">
-                                <label class="flex items-center gap-2.5 cursor-pointer group">
-                                    <input type="checkbox" name="issues" value="未交预习" 
-                                        class="w-4 h-4 text-accent-500 border-warm-300 rounded focus:ring-accent-500 focus:ring-offset-0 cursor-pointer">
-                                    <span id="previewNotSubmitText" class="text-sm text-warm-600 group-hover:text-warm-800 transition-colors">未交预习</span>
-                                </label>
-                                <label class="flex items-center gap-2.5 cursor-pointer group">
-                                    <input type="checkbox" name="issues" value="缺作业页面" 
-                                        class="w-4 h-4 text-accent-500 border-warm-300 rounded focus:ring-accent-500 focus:ring-offset-0 cursor-pointer">
-                                    <span class="text-sm text-warm-600 group-hover:text-warm-800 transition-colors">缺作业页面</span>
-                                </label>
-                                <label class="flex items-center gap-2.5 cursor-pointer group">
-                                    <input type="checkbox" name="issues" value="判断不规范" 
-                                        class="w-4 h-4 text-accent-500 border-warm-300 rounded focus:ring-accent-500 focus:ring-offset-0 cursor-pointer">
-                                    <span class="text-sm text-warm-600 group-hover:text-warm-800 transition-colors">判断不规范</span>
-                                </label>
-                                <label class="flex items-center gap-2.5 cursor-pointer group">
-                                    <input type="checkbox" name="issues" value="预习有错题" 
-                                        class="w-4 h-4 text-accent-500 border-warm-300 rounded focus:ring-accent-500 focus:ring-offset-0 cursor-pointer">
-                                    <span id="previewHasErrorText" class="text-sm text-warm-600 group-hover:text-warm-800 transition-colors">预习有错题</span>
-                                </label>
-                                <label class="flex items-center gap-2.5 cursor-pointer group">
-                                    <input type="checkbox" name="issues" value="单词拼写错误" 
-                                        class="w-4 h-4 text-accent-500 border-warm-300 rounded focus:ring-accent-500 focus:ring-offset-0 cursor-pointer">
-                                    <span class="text-sm text-warm-600 group-hover:text-warm-800 transition-colors">单词拼写错误</span>
-                                </label>
-                                <label class="flex items-center gap-2.5 cursor-pointer group">
-                                    <input type="checkbox" name="issues" value="听记未交" 
-                                        class="w-4 h-4 text-accent-500 border-warm-300 rounded focus:ring-accent-500 focus:ring-offset-0 cursor-pointer">
-                                    <span class="text-sm text-warm-600 group-hover:text-warm-800 transition-colors">听记未交</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <!-- 底部按钮区 -->
-            <div class="px-8 py-5 border-t border-warm-100 bg-white">
-                <button id="generateBtn" type="button"
-                    class="w-full py-3.5 bg-accent-500 hover:bg-accent-600 text-white font-medium rounded-xl btn-elegant flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                    <svg id="btnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    </svg>
-                    <span id="btnText">生成反馈</span>
-                </button>
-            </div>
+<body class="grain">
+  <div class="shell">
+    <header class="header-wrap">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="brand-chip">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none">
+            <defs>
+              <linearGradient id="paperGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fffef8"/>
+                <stop offset="100%" stop-color="#f7e8d2"/>
+              </linearGradient>
+              <linearGradient id="penGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ff8b4a"/>
+                <stop offset="100%" stop-color="#d74f17"/>
+              </linearGradient>
+            </defs>
+            <rect x="3.5" y="3.8" width="14.5" height="16.4" rx="2.8" fill="url(#paperGrad)" stroke="#d7bfa1" stroke-width="1"/>
+            <path d="M7 8.5h8M7 11.3h7M7 14.1h5.2" stroke="#9f8b74" stroke-linecap="round" stroke-width="1"/>
+            <g transform="translate(10.8 9.4) rotate(-28)">
+              <rect x="0" y="0" width="7.4" height="2.6" rx="1.1" fill="url(#penGrad)"/>
+              <path d="M7.4 1.3L9.3 0.2v2.2L7.4 1.3Z" fill="#7d3a1a"/>
+            </g>
+          </svg>
         </div>
-
-        <!-- 右侧展示区 (60%) -->
-        <div class="w-[60%] bg-warm-50 flex flex-col relative">
-            <!-- 右侧标题栏 -->
-            <div class="px-8 py-6 border-b border-warm-100 bg-white/80 backdrop-blur-sm flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <h2 class="text-sm font-medium text-warm-600 uppercase tracking-wide flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        生成结果
-                    </h2>
-                    <!-- 生成状态提示 -->
-                    <div id="generateStatus" class="hidden text-sm px-3 py-1 rounded-lg bg-accent-50 text-accent-600"></div>
-                </div>
-                <!-- 复制全部按钮 -->
-                <button id="copyAllBtn" 
-                    class="px-4 py-2 bg-accent-500 hover:bg-accent-600 border border-accent-500 rounded-xl text-sm font-medium text-white btn-elegant flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                    </svg>
-                    复制全部
-                </button>
-            </div>
-
-            <!-- 常用语板块 -->
-            <div class="px-6 py-3 border-b border-warm-100 bg-warm-50/50">
-                <div class="bg-white rounded-2xl p-5 border border-warm-200/60 shadow-subtle">
-                    <!-- 标题 -->
-                    <div class="flex items-center gap-2 mb-4">
-                        <svg class="w-4 h-4 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-                        </svg>
-                        <h3 class="text-sm font-medium text-warm-700">常用语</h3>
-                    </div>
-                    
-                    <!-- Task 区域 -->
-                    <div class="mb-4">
-                        <label class="block text-xs font-medium text-warm-600 mb-2">Task</label>
-                        <div class="flex items-center gap-2">
-                            <select id="quickTaskNumber" 
-                                class="w-20 px-3 py-2 bg-white border border-warm-200 rounded-lg input-focus text-warm-800 cursor-pointer text-sm">
-                                <option value="1">Task 1</option>
-                                <option value="2">Task 2</option>
-                                <option value="3">Task 3</option>
-                                <option value="4">Task 4</option>
-                                <option value="5">Task 5</option>
-                                <option value="6">Task 6</option>
-                                <option value="7">Task 7</option>
-                            </select>
-                            <input type="text" id="quickTaskContent" placeholder="输入内容" 
-                                class="flex-1 px-3 py-2 bg-white border border-warm-200 rounded-lg input-focus text-warm-800 placeholder-warm-400 text-sm">
-                            <button id="copyTaskBtn" 
-                                class="px-3 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg btn-elegant flex items-center gap-1.5 text-sm font-medium">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                                </svg>
-                                复制
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Reading Skill 区域 -->
-                    <div class="mb-4">
-                        <label class="block text-xs font-medium text-warm-600 mb-2">Reading Skill</label>
-                        <div class="flex items-center gap-2">
-                            <input type="text" id="quickReadingUnit" placeholder="单元号" maxlength="2"
-                                class="w-20 px-3 py-2 bg-white border border-warm-200 rounded-lg input-focus text-warm-800 placeholder-warm-400 text-sm text-center">
-                            <select id="quickReadingType" 
-                                class="w-16 px-3 py-2 bg-white border border-warm-200 rounded-lg input-focus text-warm-800 cursor-pointer text-sm">
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                            </select>
-                            <div class="flex-1"></div>
-                            <button id="copyReadingBtn" 
-                                class="px-3 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg btn-elegant flex items-center gap-1.5 text-sm font-medium">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                                </svg>
-                                复制
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- 固定常用语 -->
-                    <div class="border-t border-warm-100 pt-4 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-warm-700">Vocabulary部分</span>
-                            <button id="copyVocabBtn" 
-                                class="px-3 py-1.5 bg-white hover:bg-warm-50 border border-accent-200 hover:border-accent-300 rounded-lg text-xs font-medium text-accent-600 hover:text-accent-700 btn-elegant flex items-center gap-1.5">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                                </svg>
-                                复制
-                            </button>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-warm-700">Reading部分</span>
-                            <button id="copyReadingPartBtn" 
-                                class="px-3 py-1.5 bg-white hover:bg-warm-50 border border-accent-200 hover:border-accent-300 rounded-lg text-xs font-medium text-accent-600 hover:text-accent-700 btn-elegant flex items-center gap-1.5">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                                </svg>
-                                复制
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 家长问候卡片（独立区域） -->
-            <div id="greetingCard" class="hidden px-6 py-2">
-                <div class="bg-white rounded-2xl px-6 py-4 flex items-start gap-4 border border-warm-200/60 shadow-subtle">
-                    <div class="w-10 h-10 bg-accent-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg class="w-5 h-5 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                        </svg>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-xs font-semibold text-accent-600 uppercase tracking-wide">家长问候</span>
-                            <span class="text-xs text-accent-400">群聊发送</span>
-                        </div>
-                        <p id="greetingText" class="text-sm text-warm-700 leading-relaxed"></p>
-                    </div>
-                    <button id="copyGreetingBtn"
-                        class="flex-shrink-0 px-3 py-1.5 bg-white hover:bg-warm-50 border border-accent-200 hover:border-accent-300 rounded-lg text-xs font-medium text-accent-600 hover:text-accent-700 transition-all duration-200 flex items-center gap-1.5"
-                        title="复制问候语">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                        </svg>
-                        复制问候语
-                    </button>
-                </div>
-            </div>
-
-            <!-- 内容展示区 -->
-            <div class="flex-1 overflow-y-auto custom-scrollbar px-6 py-3">
-                <div id="outputContainer" class="bg-white rounded-2xl min-h-full p-6 relative border border-warm-200/60 shadow-subtle">
-                    <!-- 空状态 -->
-                    <div id="emptyState" class="flex flex-col items-center justify-center h-full text-center py-20">
-                        <div class="w-20 h-20 bg-warm-50 rounded-2xl flex items-center justify-center mb-4">
-                            <svg class="w-10 h-10 text-warm-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                            </svg>
-                        </div>
-                        <p class="text-warm-400 text-sm">填写左侧表单，点击"生成反馈"</p>
-                        <p class="text-warm-300 text-xs mt-1">生成的结果将在这里实时显示</p>
-                    </div>
-                    <!-- 学生反馈内容区域 -->
-                    <div id="feedbackContent" class="hidden">
-                        <div class="flex items-center gap-5 mb-6">
-                            <div class="w-14 h-14 bg-accent-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                                <svg class="w-7 h-7 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-lg font-display font-semibold text-accent-600 uppercase tracking-wide">学生反馈</span>
-                                    <span class="text-sm text-accent-400">批改记录</span>
-                                </div>
-                            </div>
-                            <button id="copyFeedbackBtn"
-                                class="flex-shrink-0 px-3 py-1.5 bg-white hover:bg-warm-50 border border-accent-200 hover:border-accent-300 rounded-lg text-xs font-medium text-accent-600 hover:text-accent-700 transition-all duration-200 flex items-center gap-1.5"
-                                title="复制反馈">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                                </svg>
-                                复制反馈
-                            </button>
-                        </div>
-                        <!-- Markdown 内容 -->
-                        <div id="markdownOutput" class="markdown-content text-warm-700 text-[15px] whitespace-pre-wrap" style="text-decoration: none !important;"></div>
-                    </div>
-                </div>
-            </div>
+        <div class="min-w-0">
+          <h1 class="text-xl font-bold leading-tight truncate">Gradify Studio</h1>
+          <p class="text-sm text-slate-600 truncate">English Homework Feedback Generator</p>
         </div>
-    </div>
+      </div>
+      <div class="hidden md:flex flex-col items-end gap-2 text-sm">
+        <div class="flex items-center gap-3">
+          <div class="meta-chip">
+            <span class="font-semibold text-slate-700">碳碳四键 · 个人开发实践项目-2</span>
+            <span class="meta-divider"></span>
+            <span class="font-bold tracking-wide text-slate-900">蜀ICP备2026006689-2号</span>
+          </div>
+          <a class="gh-chip" target="_blank" href="https://github.com/Yuntian-Liu/Gradify">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.16c-3.23.7-3.92-1.56-3.92-1.56-.53-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.78 1.2 1.78 1.2 1.03 1.76 2.7 1.25 3.35.95.1-.75.4-1.25.73-1.54-2.58-.3-5.3-1.3-5.3-5.77 0-1.27.45-2.3 1.2-3.11-.12-.3-.52-1.5.11-3.13 0 0 .98-.32 3.2 1.19a11.1 11.1 0 0 1 5.83 0c2.22-1.51 3.2-1.19 3.2-1.19.64 1.63.24 2.83.12 3.13.75.81 1.2 1.84 1.2 3.11 0 4.48-2.72 5.46-5.31 5.76.41.36.78 1.06.78 2.14v3.16c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/>
+            </svg>
+            <span>Open Source</span>
+          </a>
+        </div>
+        <div class="text-xs text-slate-500 inline-flex items-center gap-2">
+          <span>Copyright © LYT 2024~2026 All Rights Reserved</span>
+          <span class="px-2 py-1 rounded-lg border border-black/10 bg-white/80 text-slate-700">YTUN 版权所有</span>
+        </div>
+      </div>
+    </header>
 
-    <!-- Toast 提示 -->
-    <div id="toastContainer" class="fixed top-6 right-6 z-50 space-y-2"></div>
-
-    <script>
-        // ============================================================================
-        // 🎛️ 应用状态管理
-        // ============================================================================
-        const state = {
-            isGenerating: false,
-            fullContent: '',
-            greetingContent: '',
-        };
-
-        // ============================================================================
-        // 🎯 DOM 元素引用
-        // ============================================================================
-        const elements = {
-            form: document.getElementById('feedbackForm'),
-            studentName: document.getElementById('studentName'),
-            // 新的单元进度相关元素
-            unitNumber: document.getElementById('unitNumber'),
-            lessonType: document.getElementById('lessonType'),
-            lessonNumber: document.getElementById('lessonNumber'),
-            // 预习相关元素
-            hasPreview: document.getElementById('hasPreview'),
-            previewWrapper: document.getElementById('previewWrapper'),
-            previewUnitNumber: document.getElementById('previewUnitNumber'),
-            previewType: document.getElementById('previewType'),
-            // 原有元素
-            feedbackType: document.getElementById('feedbackType'),
-            greetingTime: document.getElementById('greetingTime'),
-            rating: document.getElementById('rating'),
-            lostSections: document.getElementById('lostSections'),
-            lostSectionsWrapper: document.getElementById('lostSectionsWrapper'),
-            errorNotes: document.getElementById('errorNotes'),
-            issues: document.querySelectorAll('input[name="issues"]'),
-            generateBtn: document.getElementById('generateBtn'),
-            btnIcon: document.getElementById('btnIcon'),
-            btnText: document.getElementById('btnText'),
-            greetingCard: document.getElementById('greetingCard'),
-            greetingText: document.getElementById('greetingText'),
-            copyGreetingBtn: document.getElementById('copyGreetingBtn'),
-            copyAllBtn: document.getElementById('copyAllBtn'),
-            copyFeedbackBtn: document.getElementById('copyFeedbackBtn'),
-            emptyState: document.getElementById('emptyState'),
-            markdownOutput: document.getElementById('markdownOutput'),
-            toastContainer: document.getElementById('toastContainer'),
-        };
-
-        // ============================================================================
-        // 🔧 工具函数
-        // ============================================================================
-        
-        // Toast 提示
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            const bgColor = type === 'success' ? 'bg-accent-500' : 'bg-red-500';
-            toast.className = `${bgColor} text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 toast-enter`;
-            toast.innerHTML = `
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"/>
-                </svg>
-                <span class="text-sm font-medium">${message}</span>
-            `;
-            elements.toastContainer.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.classList.remove('toast-enter');
-                toast.classList.add('toast-exit');
-                setTimeout(() => toast.remove(), 200);
-            }, 2500);
-        }
-
-        // 设置按钮 Loading 状态
-        function setButtonLoading(loading) {
-            state.isGenerating = loading;
-            elements.generateBtn.disabled = loading;
-            
-            if (loading) {
-                // 简洁的加载动画
-                elements.btnIcon.innerHTML = `<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.416" stroke-dashoffset="10"></circle></svg>`;
-                elements.btnText.textContent = 'AI正在生成中...';
-            } else {
-                elements.btnIcon.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`;
-                elements.btnText.textContent = '生成反馈';
-            }
-        }
-        
-        // 显示生成状态提示
-        function showGenerateStatus(message, type = 'info') {
-            const statusBar = document.getElementById('generateStatus');
-            if (!statusBar) return;
-            
-            statusBar.textContent = message;
-            statusBar.className = `text-sm px-4 py-2 rounded-lg transition-all duration-300 ${type === 'info' ? 'bg-accent-50 text-accent-600' : type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`;
-            statusBar.classList.remove('hidden');
-        }
-        
-        function hideGenerateStatus() {
-            const statusBar = document.getElementById('generateStatus');
-            if (statusBar) {
-                statusBar.classList.add('hidden');
-            }
-        }
-
-        // 自动滚动到底部
-        function scrollToBottom() {
-            const container = elements.markdownOutput.parentElement;
-            container.scrollTop = container.scrollHeight;
-        }
-
-        // ============================================================================
-        // 📝 表单逻辑
-        // ============================================================================
-
-        // 1. 单元类型联动 - 自动设置反馈类型
-        function handleLessonTypeChange() {
-            const isDay = elements.lessonType.value === 'Day';
-            // 自动设置反馈类型：Day=伴学手册反馈，L=练习反馈
-            elements.feedbackType.value = isDay ? '伴学手册反馈' : '练习反馈';
-        }
-
-        // 2. 预习联动 - 勾选时显示预习输入框
-        function handlePreviewChange() {
-            const showPreview = elements.hasPreview.checked;
-            elements.previewWrapper.classList.toggle('hidden', !showPreview);
-            updatePreviewCheckboxText();
-        }
-
-        // 2.5 更新预习相关 checkbox 的显示文本
-        function updatePreviewCheckboxText() {
-            const previewUnit = elements.previewUnitNumber.value.trim();
-            const previewType = elements.previewType.value;
-            
-            // 获取 checkbox 文本元素
-            const previewNotSubmitText = document.getElementById('previewNotSubmitText');
-            const previewHasErrorText = document.getElementById('previewHasErrorText');
-            
-            if (previewUnit && elements.hasPreview.checked) {
-                // 动态更新文本
-                const unitFull = `U${previewUnit}${previewType}`;
-                previewNotSubmitText.textContent = `${unitFull} Preview未交`;
-                previewHasErrorText.textContent = `${unitFull} Preview有错题`;
-            } else {
-                // 恢复默认文本
-                previewNotSubmitText.textContent = '未交预习';
-                previewHasErrorText.textContent = '预习有错题';
-            }
-        }
-
-        // 监听预习单元输入变化
-        elements.previewUnitNumber.addEventListener('input', updatePreviewCheckboxText);
-        elements.previewType.addEventListener('change', updatePreviewCheckboxText);
-
-        // 3. 评级联动 - A+ 时禁用失分板块
-        function handleRatingChange() {
-            const isPerfect = elements.rating.value === 'A+';
-            elements.lostSections.disabled = isPerfect;
-            elements.lostSectionsWrapper.style.opacity = isPerfect ? '0.5' : '1';
-            if (isPerfect) {
-                elements.lostSections.value = '';
-            }
-        }
-
-        // 绑定事件
-        elements.lessonType.addEventListener('change', handleLessonTypeChange);
-        elements.hasPreview.addEventListener('change', handlePreviewChange);
-        elements.rating.addEventListener('change', handleRatingChange);
-        
-        // 初始化
-        handleLessonTypeChange();
-        handleRatingChange();
-
-        // ============================================================================
-        // 🚀 生成反馈逻辑
-        // ============================================================================
-
-        async function generateFeedback() {
-            if (state.isGenerating) return;
-
-            // 验证必填字段
-            if (!elements.studentName.value.trim()) {
-                showToast('请输入学生英文名', 'error');
-                elements.studentName.focus();
-                return;
-            }
-            if (!elements.unitNumber.value.trim()) {
-                showToast('请输入单元号', 'error');
-                elements.unitNumber.focus();
-                return;
-            }
-
-            // 构建单元进度字符串
-            let unitProgress = '';
-            const unitNum = elements.unitNumber.value.trim();
-            const lessonType = elements.lessonType.value;
-            const lessonNum = elements.lessonNumber.value;
-            
-            if (lessonType === 'Day') {
-                unitProgress = `U${unitNum}Day${lessonNum}`;
-                
-                // 如果有预习，添加预习信息
-                if (elements.hasPreview.checked && elements.previewUnitNumber.value.trim()) {
-                    const previewType = elements.previewType.value;
-                    const previewUnit = elements.previewUnitNumber.value.trim();
-                    unitProgress += `&U${previewUnit}${previewType} Preview`;
-                }
-            } else {
-                unitProgress = `U${unitNum}${lessonType}${lessonNum}`;
-            }
-
-            // 收集表单数据
-            const formData = {
-                student_name: elements.studentName.value.trim(),
-                unit_progress: unitProgress,
-                feedback_type: elements.feedbackType.value,
-                greeting_time: elements.greetingTime.value,
-                rating: elements.rating.value,
-                lost_sections: elements.lostSections.value.trim(),
-                error_notes: elements.errorNotes.value.trim(),
-                issues: Array.from(elements.issues).filter(cb => cb.checked).map(cb => cb.value),
-            };
-
-            // 重置输出区
-            elements.greetingCard.classList.add('hidden');
-            elements.greetingCard.classList.remove('greeting-card-enter');
-            elements.greetingText.textContent = '';
-            state.greetingContent = '';
-            elements.emptyState.classList.add('hidden');
-            elements.markdownOutput.classList.remove('hidden');
-            elements.markdownOutput.textContent = '';
-            state.fullContent = '';
-
-            setButtonLoading(true);
-
-            try {
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const data = JSON.parse(line.slice(6));
-                                
-                                if (data.type === 'greeting') {
-                                    // 问候语单独显示在卡片中
-                                    showGenerateStatus('💬 问候语已生成，正在生成批改记录...', 'info');
-                                    state.greetingContent = data.content;
-                                    elements.greetingText.textContent = data.content;
-                                    elements.greetingCard.classList.remove('hidden');
-                                    elements.greetingCard.classList.add('greeting-card-enter');
-                                } else if (data.type === 'header') {
-                                    showGenerateStatus('✅ 模板生成完成，AI正在扩写中...', 'info');
-                                    state.fullContent += data.content;
-                                    elements.markdownOutput.textContent = state.fullContent;
-                                    scrollToBottom();
-                                } else if (data.content) {
-                                    showGenerateStatus('✨ AI正在生成解析...', 'info');
-                                    state.fullContent += data.content;
-                                    elements.markdownOutput.textContent = state.fullContent;
-                                    scrollToBottom();
-                                } else if (data.type === 'footer') {
-                                    showGenerateStatus('✅ 正在添加备注信息...', 'info');
-                                    state.fullContent += data.content;
-                                    elements.markdownOutput.textContent = state.fullContent;
-                                    scrollToBottom();
-                                } else if (data.type === 'complete' || data.done) {
-                                    showGenerateStatus('🎉 生成完成！', 'success');
-                                    // 启用复制按钮
-                                    elements.copyGreetingBtn.disabled = false;
-                                    elements.copyAllBtn.disabled = false;
-                                    // 显示学生反馈内容区域
-                                    document.getElementById('feedbackContent').classList.remove('hidden');
-                                } else if (data.error) {
-                                    showGenerateStatus(`❌ 生成失败: ${data.error}`, 'error');
-                                    showToast(`生成出错: ${data.error}`, 'error');
-                                }
-                            } catch (e) {
-                                // 忽略解析错误
-                            }
-                        }
-                    }
-                }
-
-                setButtonLoading(false);
-                showToast('反馈生成完成！');
-
-            } catch (error) {
-                console.error('Generation error:', error);
-                setButtonLoading(false);
-                showToast('生成失败，请检查网络连接', 'error');
-            }
-        }
-
-        elements.generateBtn.addEventListener('click', generateFeedback);
-
-        // ============================================================================
-        // 📋 复制功能
-        // ============================================================================
-
-        // 复制全部（问候语+学生反馈）
-        const copyAllBtn = document.getElementById('copyAllBtn');
-        copyAllBtn.addEventListener('click', async () => {
-            if (!state.greetingContent && !state.fullContent) return;
-            
-            // 组合内容：问候语 + 空行 + 学生反馈
-            const fullText = state.greetingContent 
-                ? state.greetingContent + '\n\n' + state.fullContent 
-                : state.fullContent;
-            
-            try {
-                await navigator.clipboard.writeText(fullText);
-                showToast('全部内容复制成功！');
-            } catch (err) {
-                const textarea = document.createElement('textarea');
-                textarea.value = fullText;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                showToast('全部内容复制成功！');
-            }
-        });
-
-        // 复制问候语
-        elements.copyGreetingBtn.addEventListener('click', async () => {
-            if (!state.greetingContent) return;
-            try {
-                await navigator.clipboard.writeText(state.greetingContent);
-                showToast('问候语复制成功！');
-            } catch (err) {
-                const textarea = document.createElement('textarea');
-                textarea.value = state.greetingContent;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                showToast('问候语复制成功！');
-            }
-        });
-
-        // 复制反馈（仅学生反馈）
-        elements.copyFeedbackBtn.addEventListener('click', async () => {
-            if (!state.fullContent) return;
-            
-            try {
-                await navigator.clipboard.writeText(state.fullContent);
-                showToast('反馈复制成功！');
-            } catch (err) {
-                // Fallback
-                const textarea = document.createElement('textarea');
-                textarea.value = state.fullContent;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                showToast('反馈复制成功！');
-            }
-        });
-
-        // ============================================================================
-        // 📝 常用语复制功能
-        // ============================================================================
-
-        // 通用复制函数
-        async function copyToClipboard(text, successMessage) {
-            if (!text) return;
-            try {
-                await navigator.clipboard.writeText(text);
-                showToast(successMessage);
-            } catch (err) {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                showToast(successMessage);
-            }
-        }
-
-        // 1. Task 复制功能：Task3 造句部分
-        const copyTaskBtn = document.getElementById('copyTaskBtn');
-        copyTaskBtn.addEventListener('click', () => {
-            const taskNumber = document.getElementById('quickTaskNumber').value;
-            const taskContent = document.getElementById('quickTaskContent').value.trim();
-            if (!taskContent) {
-                showToast('请输入Task内容', 'error');
-                document.getElementById('quickTaskContent').focus();
-                return;
-            }
-            const text = `Task${taskNumber} ${taskContent}部分`;
-            copyToClipboard(text, 'Task内容复制成功！');
-        });
-
-        // 2. Reading Skill 复制功能：Reading Skill 1A
-        const copyReadingBtn = document.getElementById('copyReadingBtn');
-        copyReadingBtn.addEventListener('click', () => {
-            const readingUnit = document.getElementById('quickReadingUnit').value.trim();
-            if (!readingUnit) {
-                showToast('请输入单元号', 'error');
-                document.getElementById('quickReadingUnit').focus();
-                return;
-            }
-            const readingType = document.getElementById('quickReadingType').value;
-            const text = `Reading Skill ${readingUnit}${readingType}`;
-            copyToClipboard(text, 'Reading Skill复制成功！');
-        });
-
-        // 3. Vocabulary部分 复制功能
-        const copyVocabBtn = document.getElementById('copyVocabBtn');
-        copyVocabBtn.addEventListener('click', () => {
-            copyToClipboard('Vocabulary部分', 'Vocabulary部分复制成功！');
-        });
-
-        // 4. Reading部分 复制功能
-        const copyReadingPartBtn = document.getElementById('copyReadingPartBtn');
-        copyReadingPartBtn.addEventListener('click', () => {
-            copyToClipboard('Reading部分', 'Reading部分复制成功！');
-        });
-
-        // ============================================================================
-        // ⌨️ 快捷键支持
-        // ============================================================================
-
-        document.addEventListener('keydown', (e) => {
-            // Ctrl/Cmd + Enter 生成反馈
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                generateFeedback();
-            }
-        });
-    </script>
-    
-    <!-- 页脚 -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-warm-100 z-40">
-        <div class="max-w-screen-2xl mx-auto px-8 py-4">
-            <div class="flex items-center justify-between">
-                <!-- 左侧：项目信息 -->
-                <div class="flex items-center gap-6">
+    <main class="workspace">
+      <section class="panel left-panel">
+        <div class="panel-scroll custom-scrollbar">
+          <form id="feedbackForm">
+            <div class="section-card">
+              <div class="section-title">Basic Info</div>
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-sm mb-1.5">Student Name</label>
+                  <input class="input-solid" type="text" id="studentName" placeholder="e.g. Lisa">
+                </div>
+                <div>
+                  <label class="block text-sm mb-1.5">Unit Progress</label>
+                  <div class="flex items-center gap-2">
+                    <span class="text-slate-500 font-semibold">U</span>
+                    <input class="input-solid text-center w-16" type="text" id="unitNumber" maxlength="2" placeholder="7">
+                    <span class="text-slate-400">-</span>
+                    <select class="input-solid w-24" id="lessonType">
+                      <option value="L">L</option>
+                      <option value="Day">Day</option>
+                    </select>
+                    <select class="input-solid w-24" id="lessonNumber">
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                    </select>
+                  </div>
+                  <input type="hidden" id="feedbackType" value="练习反馈">
+                </div>
+                <div class="pt-2 border-t border-black/10">
+                  <label class="inline-flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="checkbox" id="hasPreview" class="w-4 h-4 rounded border-black/25">
+                    <span>包含预习作业</span>
+                  </label>
+                  <div id="previewWrapper" class="hidden mt-2 pl-6">
                     <div class="flex items-center gap-2">
-<span class="font-display font-semibold text-warm-700">Gradify V2.5</span>
-                        <span class="text-warm-300">|</span>
-                        <span class="text-warm-500 text-sm">少儿英语作业反馈生成器</span>
+                      <span class="text-slate-500 font-semibold">U</span>
+                      <input class="input-solid text-center w-16" type="text" id="previewUnitNumber" maxlength="2" placeholder="7">
+                      <select class="input-solid w-20" id="previewType">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                      </select>
+                      <span class="text-slate-500 text-sm">Preview</span>
                     </div>
+                  </div>
                 </div>
-                
-                <!-- 中间：ICP备案信息 -->
-                <div class="px-4 py-2 bg-warm-50 rounded-xl border border-warm-100 flex items-center gap-4">
-                    <span class="text-xs font-medium text-accent-600">碳碳四键的个人开发实践项目-2</span>
-                    <span class="text-warm-300">|</span>
-                    <a href="https://beian.miit.gov.cn/" target="_blank" class="text-xs text-warm-500 hover:text-accent-600 transition-colors">
-                        蜀ICP备2026006689-2号
-                    </a>
+                <div>
+                  <label class="block text-sm mb-1.5">Greeting Time</label>
+                  <select class="input-solid" id="greetingTime">
+                    <option value="早上">早上</option>
+                    <option value="中午">中午</option>
+                    <option value="下午">下午</option>
+                    <option value="晚上" selected>晚上</option>
+                  </select>
                 </div>
-                
-                <!-- 右侧：GitHub和版权 -->
-                <div class="flex items-center gap-4">
-                    <a href="https://github.com/Yuntian-Liu/Gradify" target="_blank" class="flex items-center gap-1.5 text-warm-500 hover:text-accent-600 transition-colors text-sm">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                        </svg>
-                        <span>GitHub</span>
-                    </a>
-                    <span class="text-warm-400 text-sm">Copyright © LYT, 2026</span>
-                </div>
+              </div>
             </div>
+
+            <div class="section-card">
+              <div class="section-title">Performance</div>
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-sm mb-1.5">Score Rating</label>
+                  <select class="input-solid" id="rating">
+                    <option value="A+">A+ (全对)</option>
+                    <option value="A" selected>A (不错)</option>
+                    <option value="B">B (中规中矩)</option>
+                    <option value="C">C (需加强)</option>
+                  </select>
+                </div>
+                <div id="lostSectionsWrapper">
+                  <label class="block text-sm mb-1.5">主要失分板块</label>
+                  <input class="input-solid" type="text" id="lostSections" placeholder="如: 词汇和语法、阅读">
+                </div>
+              </div>
+            </div>
+
+            <div class="section-card">
+              <div class="flex items-center justify-between mb-2 gap-2">
+                <div class="section-title mb-0">Error Notes</div>
+                <span id="generateModelLabel" class="model-chip"><span class="model-dot"></span>Model: Xiaomi-Mimo-V2-Pro</span>
+              </div>
+              <textarea id="errorNotes" rows="5" class="input-solid resize-none" placeholder="用简短短语记录错题，例如：&#10;Task3造句: 3.没懂what sports，选了颜色。6.主谓一致错&#10;阅读: 第2题细节题定位错误"></textarea>
+            </div>
+
+          </form>
         </div>
-    </footer>
+
+        <div class="issue-dock">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold tracking-wide uppercase text-slate-700">Issue Flags</h3>
+            <span class="text-xs text-slate-500">Always visible</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <label class="issue-chip"><input type="checkbox" name="issues" value="未交预习" class="w-4 h-4"><span id="previewNotSubmitText">未交预习</span></label>
+            <label class="issue-chip"><input type="checkbox" name="issues" value="缺作业页面" class="w-4 h-4"><span>缺作业页面</span></label>
+            <label class="issue-chip"><input type="checkbox" name="issues" value="判断不规范" class="w-4 h-4"><span>判断不规范</span></label>
+            <label class="issue-chip"><input type="checkbox" name="issues" value="预习有错题" class="w-4 h-4"><span id="previewHasErrorText">预习有错题</span></label>
+            <label class="issue-chip"><input type="checkbox" name="issues" value="单词拼写错误" class="w-4 h-4"><span>单词拼写错误</span></label>
+            <label class="issue-chip"><input type="checkbox" name="issues" value="听记未交" class="w-4 h-4"><span>听记未交</span></label>
+          </div>
+          <div id="previewErrorCountWrap" class="hidden mt-2">
+            <label class="text-xs text-slate-600">Preview 错题数量</label>
+            <select id="previewErrorCount" class="input-solid mt-1 w-28">
+              <option value="1">1 题</option>
+              <option value="2">2 题</option>
+              <option value="3">3 题</option>
+              <option value="4">4 题</option>
+              <option value="5">5 题</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="generate-wrap">
+          <button id="generateBtn" type="button" class="btn-main flex items-center justify-center gap-2">
+            <svg id="btnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <span id="btnText">生成反馈</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel right-panel">
+        <div class="right-head">
+          <div class="flex items-center gap-2 min-w-0">
+            <h2 class="font-bold">Output</h2>
+            <div id="generateStatus" class="status-pill hidden">Ready</div>
+          </div>
+          <button id="copyAllBtn" type="button" class="px-3 py-2 rounded-xl text-sm font-semibold text-white bg-slate hover:brightness-110 transition disabled:opacity-50" disabled>复制全部</button>
+        </div>
+        <details class="quick-tools" open>
+          <summary class="cursor-pointer list-none flex items-center justify-between">
+            <span class="text-sm font-bold tracking-wide uppercase text-slate-600">Quick Phrases</span>
+            <span class="text-xs text-slate-500">Collapse</span>
+          </summary>
+          <div class="mt-3 grid md:grid-cols-[auto_auto_1fr_auto] gap-2 mb-2">
+            <select id="quickTaskNumber" class="input-solid w-24">
+              <option value="1">Task 1</option><option value="2">Task 2</option><option value="3">Task 3</option><option value="4">Task 4</option><option value="5">Task 5</option><option value="6">Task 6</option><option value="7">Task 7</option>
+            </select>
+            <select id="quickTaskPreset" class="input-solid w-32">
+              <option value="">常用预设</option>
+              <option value="造句">造句</option>
+              <option value="Vocabulary">Vocabulary</option>
+              <option value="Grammar">Grammar</option>
+              <option value="Match">Match</option>
+              <option value="Reading">Reading</option>
+            </select>
+            <input id="quickTaskContent" class="input-solid" type="text" placeholder="输入内容">
+            <button id="copyTaskBtn" type="button" class="px-3 rounded-xl text-sm font-semibold text-white bg-coral hover:brightness-110 transition">复制</button>
+          </div>
+          <div class="grid grid-cols-[auto_auto_1fr_auto] gap-2 mb-3">
+            <input id="quickReadingUnit" class="input-solid w-20 text-center" type="text" maxlength="2" placeholder="单元号">
+            <select id="quickReadingType" class="input-solid w-16"><option value="A">A</option><option value="B">B</option></select>
+            <div></div>
+            <button id="copyReadingBtn" type="button" class="px-3 rounded-xl text-sm font-semibold text-white bg-cyan hover:brightness-110 transition">复制</button>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="copyVocabBtn" type="button" class="px-3 py-1.5 rounded-lg border border-black/15 text-sm hover:bg-black/5 transition">Vocabulary部分</button>
+            <button id="copyReadingPartBtn" type="button" class="px-3 py-1.5 rounded-lg border border-black/15 text-sm hover:bg-black/5 transition">Reading部分</button>
+          </div>
+        </details>
+        <div class="output-scroll custom-scrollbar">
+          <div class="output-frame" id="outputContainer">
+            <div id="greetingCard" class="greeting-card hidden">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-xs uppercase tracking-wider text-cyan-700 font-bold mb-1">Parent Greeting</div>
+                  <p id="greetingText" class="text-sm leading-relaxed"></p>
+                </div>
+                <button id="copyGreetingBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition" disabled>复制问候</button>
+              </div>
+            </div>
+            <div id="emptyState" class="h-full min-h-[300px] grid place-items-center text-center text-slate-500">
+              <div>
+                <p class="font-semibold text-slate-700 mb-1">你的反馈草稿会实时出现在这里</p>
+                <p class="text-sm">填写左侧内容后点击“生成反馈”</p>
+              </div>
+            </div>
+            <div id="feedbackContent" class="hidden">
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <h3 class="text-sm uppercase tracking-wider font-bold text-slate-500">Feedback Draft</h3>
+                <div class="flex items-center gap-2">
+                  <button id="viewModeBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition">Mode: Rendered</button>
+                  <button id="boldBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition">Bold</button>
+                  <button id="highlightBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition">Highlight</button>
+                  <button id="copyFeedbackBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition" disabled>仅复制反馈</button>
+                </div>
+              </div>
+              <div id="markdownOutput" class="markdown-content" contenteditable="true" spellcheck="false"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 space-y-2"></div>
+  <div class="assistant-dock" id="assistantDock">
+    <span class="assistant-hover-text">唤起助教突突er</span>
+    <button id="assistantFab" type="button" class="assistant-fab" aria-label="唤起助教突突er">
+      <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none">
+        <path d="M4 12c0-4.4 3.6-8 8-8h.3c4.3 0 7.7 3.5 7.7 7.7V12c0 4.4-3.6 8-8 8h-1.6L6.8 22v-3.2A8 8 0 0 1 4 12Z" stroke="currentColor" stroke-width="1.7"/>
+        <circle cx="10" cy="12" r="1" fill="currentColor"/>
+        <circle cx="14" cy="12" r="1" fill="currentColor"/>
+      </svg>
+    </button>
+  </div>
+  <div id="assistantPanel" class="assistant-panel hidden">
+    <div class="px-4 py-3 border-b border-black/10 flex items-center justify-between">
+      <div>
+        <div class="text-sm font-bold leading-tight">Tutor Assistant</div>
+        <div class="text-xs text-slate-500 mt-1">仅问答，不改动反馈草稿</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="assistantModelLabel" class="model-chip"><span class="model-dot"></span>Model: mimo-v2-omni</span>
+        <button id="assistantCloseBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition">Close</button>
+      </div>
+    </div>
+    <div id="assistantMessages" class="assistant-msgs custom-scrollbar">
+      <div class="assistant-bubble assistant-ai">这里可以问批改时拿不准的问题，例如：这道题更适合判“语法错误”还是“语义偏差”？</div>
+    </div>
+    <div class="p-3 border-t border-black/10">
+      <textarea id="assistantInput" rows="3" class="input-solid resize-none" placeholder="输入你的问题，Enter发送，Shift+Enter换行"></textarea>
+      <input id="assistantImageInput" type="file" accept="image/*" class="hidden">
+      <div id="assistantImageTray" class="mt-2 hidden flex flex-wrap gap-2"></div>
+      <div class="mt-2 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2"></div>
+        <div class="flex items-center gap-2">
+          <button id="assistantImageBtn" type="button" class="icon-btn" title="添加图片" aria-label="添加图片">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M5 5h14v14H5z" stroke="currentColor" stroke-width="1.6"/><path d="m8 15 2.4-2.8 2.2 2 3-3.7L19 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/></svg>
+          </button>
+          <button id="assistantSearchBtn" type="button" class="icon-btn" title="联网搜索" aria-label="联网搜索">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4 4M8.5 11h5M11 8.5v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+          <button id="assistantReadAloudBtn" type="button" class="icon-btn" title="语音播报" aria-label="语音播报">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M4 14h3l4 3V7l-4 3H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M15 9.8a3.8 3.8 0 0 1 0 4.4M17.6 7a7.2 7.2 0 0 1 0 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+          <button id="assistantVoiceBtn" type="button" class="icon-btn" title="语音输入" aria-label="语音输入">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"><rect x="9" y="4" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v3M9 20h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+          <button id="assistantAskBtn" type="button" class="px-3 py-2 rounded-xl text-sm font-semibold text-white bg-slate hover:brightness-110 transition">提问</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = { isGenerating:false, fullContent:"", greetingContent:"", viewMode:"rendered", assistantLoading:false, assistantImages:[], recognition:null, recognizing:false, readAloudEnabled:false, assistantWebSearchEnabled:false, assistantThinkingTimer:null, assistantThinkingNode:null, assistantThinkingStartedAt:0 };
+    const elements = {
+      studentName:document.getElementById("studentName"), unitNumber:document.getElementById("unitNumber"), lessonType:document.getElementById("lessonType"), lessonNumber:document.getElementById("lessonNumber"),
+      hasPreview:document.getElementById("hasPreview"), previewWrapper:document.getElementById("previewWrapper"), previewUnitNumber:document.getElementById("previewUnitNumber"), previewType:document.getElementById("previewType"),
+      feedbackType:document.getElementById("feedbackType"), greetingTime:document.getElementById("greetingTime"), rating:document.getElementById("rating"), lostSections:document.getElementById("lostSections"), lostSectionsWrapper:document.getElementById("lostSectionsWrapper"),
+      errorNotes:document.getElementById("errorNotes"), issues:document.querySelectorAll('input[name="issues"]'),
+      generateBtn:document.getElementById("generateBtn"), btnIcon:document.getElementById("btnIcon"), btnText:document.getElementById("btnText"),
+      greetingCard:document.getElementById("greetingCard"), greetingText:document.getElementById("greetingText"),
+      copyGreetingBtn:document.getElementById("copyGreetingBtn"), copyAllBtn:document.getElementById("copyAllBtn"), copyFeedbackBtn:document.getElementById("copyFeedbackBtn"),
+      emptyState:document.getElementById("emptyState"), markdownOutput:document.getElementById("markdownOutput"), toastContainer:document.getElementById("toastContainer"),
+      feedbackContent:document.getElementById("feedbackContent"), generateStatus:document.getElementById("generateStatus"),
+      viewModeBtn:document.getElementById("viewModeBtn"),
+      assistantFab:document.getElementById("assistantFab"), assistantPanel:document.getElementById("assistantPanel"), assistantCloseBtn:document.getElementById("assistantCloseBtn"),
+      assistantMessages:document.getElementById("assistantMessages"), assistantInput:document.getElementById("assistantInput"), assistantAskBtn:document.getElementById("assistantAskBtn"),
+      assistantImageInput:document.getElementById("assistantImageInput"), assistantImageBtn:document.getElementById("assistantImageBtn"), assistantImageTray:document.getElementById("assistantImageTray"),
+      assistantSearchBtn:document.getElementById("assistantSearchBtn"),
+      assistantVoiceBtn:document.getElementById("assistantVoiceBtn"), assistantReadAloudBtn:document.getElementById("assistantReadAloudBtn"),
+      generateModelLabel:document.getElementById("generateModelLabel"), assistantModelLabel:document.getElementById("assistantModelLabel")
+    };
+    const FORM_DRAFT_KEY = "gradify_form_draft_v4";
+    const DRAFT_FIELD_IDS = ["studentName","unitNumber","lessonType","lessonNumber","hasPreview","previewUnitNumber","previewType","greetingTime","rating","lostSections","errorNotes","previewErrorCount","quickTaskNumber","quickTaskPreset","quickTaskContent","quickReadingUnit","quickReadingType"];
+
+    function showToast(message, type="success"){
+      const toast=document.createElement("div");
+      const bgClass=type==="success"?"bg-cyan":"bg-coral";
+      toast.className=`${bgClass} text-white px-4 py-2 rounded-xl shadow-xl text-sm font-semibold`;
+      toast.textContent=message; elements.toastContainer.appendChild(toast); setTimeout(()=>toast.remove(),2200);
+    }
+    function showGenerateStatus(message, type="info"){
+      const map={info:"status-pill",success:"status-pill border-cyan/40 text-cyan-700",error:"status-pill border-coral/40 text-coral"};
+      elements.generateStatus.className=map[type]||map.info; elements.generateStatus.textContent=message; elements.generateStatus.classList.remove("hidden");
+    }
+    function setButtonLoading(loading){
+      state.isGenerating=loading; elements.generateBtn.disabled=loading;
+      if(loading){elements.btnIcon.innerHTML='<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" fill="none" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg>'; elements.btnText.textContent="AI 正在生成...";}
+      else {elements.btnIcon.innerHTML='<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M13 10V3L4 14h7v7l9-11h-7z"/>'; elements.btnText.textContent="生成反馈";}
+    }
+    function scrollToBottom(){const c=document.querySelector(".output-scroll"); c.scrollTop=c.scrollHeight;}
+    function syncViewModeButton(){elements.viewModeBtn.textContent = state.viewMode==="rendered" ? "Mode: Rendered" : "Mode: Raw";}
+    function preprocessMarkdownText(text){
+      const sanitized = text
+        .replace(/<\/?(u|hr|ins|del)\b[^>]*>/gi,"")
+        .replace(/^\s*([*_]\s*){3,}\s*$/gm,(m)=>m.replace(/([*_])/g,"\\$1"))
+        .replace(/~~([^~]+)~~/g,"$1")
+        .replace(/__([^_]+)__/g,"$1")
+        .replace(/\n{2,}(?=(?:U\d+[AB]\s+Preview部分|Preview部分|Vocabulary部分|Reading部分|Task\d+\s.+部分|Task\s*6\s*判断题|听记作业|Reading Skill\s.+))/g,"\n");
+      return sanitized
+        .split("\n")
+        .map(line=>{
+          const t=line.trim();
+          if(!t) return line;
+          if(/^(Vocabulary部分|Reading部分|Reading Skill\s.+|Task\d+\s.+部分|Task\s*6\s*判断题|听记作业|U\d+[AB]\s+Preview部分|Preview部分)$/i.test(t)) return `**${t}**`;
+          return line;
+        })
+        .join("\n");
+    }
+    function applyEditorCommand(command, value=null){
+      elements.markdownOutput.focus();
+      const ok = value===null ? document.execCommand(command, false) : document.execCommand(command, false, value);
+      if(ok) return;
+      const sel = window.getSelection();
+      if(!sel || !sel.rangeCount || sel.isCollapsed) return;
+      const range = sel.getRangeAt(0);
+      const text = range.toString();
+      if(!text) return;
+      const node = command==="bold" ? document.createElement("strong") : document.createElement("mark");
+      if(command!=="bold"){
+        node.style.backgroundColor = "#fff59d";
+        node.style.padding = "0 .2em";
+        node.style.borderRadius = ".2em";
+      }
+      node.textContent = text;
+      range.deleteContents();
+      range.insertNode(node);
+      sel.removeAllRanges();
+    }
+    function renderFeedback(){
+      if(state.viewMode==="raw"){
+        elements.markdownOutput.textContent = state.fullContent;
+        return;
+      }
+      const source = preprocessMarkdownText(state.fullContent || "");
+      if(window.marked){
+        const renderer = new marked.Renderer();
+        renderer.hr = () => "";
+        elements.markdownOutput.innerHTML = marked.parse(source, { breaks:true, gfm:true, renderer });
+        const suspicious = elements.markdownOutput.querySelectorAll("hr,u,ins,del");
+        suspicious.forEach((el)=>{
+          if(el.tagName === "HR"){ el.remove(); return; }
+          const frag = document.createDocumentFragment();
+          while(el.firstChild) frag.appendChild(el.firstChild);
+          el.replaceWith(frag);
+        });
+      }else{
+        elements.markdownOutput.textContent = state.fullContent;
+      }
+    }
+    function getCurrentFeedbackText(){
+      return (elements.markdownOutput.innerText || "").replace(/\n{3,}/g,"\n\n").trim();
+    }
+    function escapeHtml(text){
+      return String(text||"")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/\"/g,"&quot;")
+        .replace(/'/g,"&#39;");
+    }
+    function getCurrentFeedbackHtml(){
+      const rich = (elements.markdownOutput.innerHTML||"").trim();
+      if(state.viewMode==="rendered" && rich) return rich;
+      return `<div style="white-space:pre-wrap;">${escapeHtml(getCurrentFeedbackText())}</div>`;
+    }
+    function handleLessonTypeChange(){elements.feedbackType.value=elements.lessonType.value==="Day"?"伴学手册反馈":"练习反馈";}
+    function updatePreviewCheckboxText(){
+      const a=document.getElementById("previewNotSubmitText"), b=document.getElementById("previewHasErrorText");
+      const u=elements.previewUnitNumber.value.trim(), t=elements.previewType.value;
+      if(u&&elements.hasPreview.checked){const full="U"+u+t; a.textContent=full+" Preview未交"; b.textContent=full+" Preview有错题";}
+      else {a.textContent="未交预习"; b.textContent="预习有错题";}
+    }
+    function handlePreviewChange(){elements.previewWrapper.classList.toggle("hidden",!elements.hasPreview.checked); updatePreviewCheckboxText();}
+    function updatePreviewErrorCountVisibility(){
+      const checked = Array.from(elements.issues).some(cb=>cb.value==="预习有错题" && cb.checked);
+      const wrap = document.getElementById("previewErrorCountWrap");
+      if(wrap) wrap.classList.toggle("hidden", !checked);
+    }
+    function handleRatingChange(){const ok=elements.rating.value==="A+"; elements.lostSections.disabled=ok; elements.lostSectionsWrapper.style.opacity=ok?"0.5":"1"; if(ok)elements.lostSections.value="";}
+    function saveFormDraft(){
+      const draft={}; DRAFT_FIELD_IDS.forEach(id=>{const el=document.getElementById(id); if(!el)return; draft[id]=el.type==="checkbox"?el.checked:el.value;});
+      draft.issues=Array.from(elements.issues).filter(cb=>cb.checked).map(cb=>cb.value); localStorage.setItem(FORM_DRAFT_KEY,JSON.stringify(draft));
+    }
+    function restoreFormDraft(){
+      const raw=localStorage.getItem(FORM_DRAFT_KEY); if(!raw)return;
+      try{const draft=JSON.parse(raw); DRAFT_FIELD_IDS.forEach(id=>{const el=document.getElementById(id); if(!el||!(id in draft))return; if(el.type==="checkbox")el.checked=Boolean(draft[id]); else el.value=(id==="greetingTime" && draft[id]==="中午下午") ? "中午" : draft[id];});
+        if(Array.isArray(draft.issues)){elements.issues.forEach(cb=>cb.checked=draft.issues.includes(cb.value));}
+      }catch{localStorage.removeItem(FORM_DRAFT_KEY);}
+    }
+    function setupDraftAutosave(){
+      DRAFT_FIELD_IDS.forEach(id=>{const el=document.getElementById(id); if(!el)return; const evt=el.tagName==="SELECT"||el.type==="checkbox"?"change":"input"; el.addEventListener(evt,saveFormDraft);});
+      elements.issues.forEach(cb=>cb.addEventListener("change",()=>{saveFormDraft(); updatePreviewErrorCountVisibility();}));
+    }
+    function setupErrorNotesCounter(){
+      const meta=document.createElement("div"); meta.className="field-meta"; elements.errorNotes.insertAdjacentElement("afterend",meta);
+      const refresh=()=>{const len=elements.errorNotes.value.trim().length; const hint=len>480?"long":len>220?"good":"short"; meta.textContent="Notes length: "+len+" ("+hint+")";};
+      elements.errorNotes.addEventListener("input",refresh); refresh();
+    }
+    async function copyToClipboard(text,msg){
+      if(!text)return;
+      try{await navigator.clipboard.writeText(text); showToast(msg);}
+      catch{const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); showToast(msg);}
+    }
+    async function copyRichToClipboard({html,text,msg}){
+      if(!text && !html) return;
+      try{
+        if(navigator.clipboard && window.ClipboardItem && navigator.clipboard.write){
+          const item = new ClipboardItem({
+            "text/html": new Blob([html||""], { type:"text/html" }),
+            "text/plain": new Blob([text||""], { type:"text/plain" })
+          });
+          await navigator.clipboard.write([item]);
+          showToast(msg);
+          return;
+        }
+      }catch{}
+      await copyToClipboard(text||"", msg);
+    }
+    function toggleAssistantPanel(forceOpen=null){
+      const shouldOpen = forceOpen===null ? elements.assistantPanel.classList.contains("hidden") : Boolean(forceOpen);
+      elements.assistantPanel.classList.toggle("hidden", !shouldOpen);
+      if(shouldOpen){elements.assistantInput.focus();}
+    }
+    function renderAssistantMarkdown(text){
+      if(!window.marked) return escapeHtml(text||"");
+      const renderer = new marked.Renderer();
+      renderer.hr = () => "";
+      const src = String(text||"")
+        .replace(/<\/?(u|hr|ins|del)\b[^>]*>/gi,"")
+        .replace(/~~([^~]+)~~/g,"$1");
+      return marked.parse(src, { breaks:true, gfm:true, renderer });
+    }
+    function appendAssistantMessage(role, text, images=[], options={}){
+      const bubble=document.createElement("div");
+      bubble.className=`assistant-bubble ${role==="user"?"assistant-user":"assistant-ai"}`;
+      if(text){
+        const textNode = document.createElement("div");
+        if(role==="assistant"){
+          textNode.className = "assistant-md";
+          textNode.innerHTML = renderAssistantMarkdown(text);
+        }else{
+          textNode.textContent = text;
+        }
+        bubble.appendChild(textNode);
+      }
+      if(Array.isArray(images) && images.length){
+        const imageGrid = document.createElement("div");
+        imageGrid.className = "assistant-inline-images";
+        images.forEach((src)=>{
+          const img = document.createElement("img");
+          img.src = src;
+          img.alt = "assistant-upload";
+          img.loading = "lazy";
+          imageGrid.appendChild(img);
+        });
+        bubble.appendChild(imageGrid);
+      }
+      if(options.usage && typeof options.usage.total_tokens === "number"){
+        const meta = document.createElement("div");
+        meta.className = "assistant-meta";
+        const p = options.usage.prompt_tokens ?? "-";
+        const c = options.usage.completion_tokens ?? "-";
+        const t = options.usage.total_tokens ?? "-";
+        const modelText = options.modelUsed ? `  Model: ${options.modelUsed}` : "";
+        meta.textContent = `Tokens  Prompt: ${p}  Completion: ${c}  Total: ${t}${modelText}`;
+        bubble.appendChild(meta);
+        const wsUsage = options.usage.web_search_usage;
+        if(wsUsage && typeof wsUsage === "object"){
+          const wsMeta = document.createElement("div");
+          wsMeta.className = "assistant-meta";
+          wsMeta.textContent = `Web Search  Tool Usage: ${wsUsage.tool_usage ?? "-"}  Page Usage: ${wsUsage.page_usage ?? "-"}`;
+          bubble.appendChild(wsMeta);
+        }
+      }
+      if(Array.isArray(options.citations) && options.citations.length){
+        const citeWrap = document.createElement("div");
+        citeWrap.className = "assistant-meta";
+        citeWrap.textContent = "Sources: ";
+        options.citations.slice(0,3).forEach((c, idx)=>{
+          if(!c || !c.url) return;
+          const a = document.createElement("a");
+          a.href = c.url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.className = "underline mr-2";
+          a.textContent = c.site_name || c.title || `Source ${idx+1}`;
+          citeWrap.appendChild(a);
+        });
+        bubble.appendChild(citeWrap);
+      }
+      elements.assistantMessages.appendChild(bubble);
+      elements.assistantMessages.scrollTop=elements.assistantMessages.scrollHeight;
+    }
+    function startAssistantThinking(){
+      stopAssistantThinking();
+      state.assistantThinkingStartedAt = Date.now();
+      const node = document.createElement("div");
+      node.className = "assistant-bubble assistant-ai";
+      node.textContent = "助教正在思考中... 00:00";
+      elements.assistantMessages.appendChild(node);
+      elements.assistantMessages.scrollTop=elements.assistantMessages.scrollHeight;
+      state.assistantThinkingNode = node;
+      state.assistantThinkingTimer = setInterval(()=>{
+        if(!state.assistantThinkingNode) return;
+        const sec = Math.floor((Date.now()-state.assistantThinkingStartedAt)/1000);
+        const mm = String(Math.floor(sec/60)).padStart(2,"0");
+        const ss = String(sec%60).padStart(2,"0");
+        state.assistantThinkingNode.textContent = `助教正在思考中... ${mm}:${ss}`;
+      },1000);
+    }
+    function stopAssistantThinking(){
+      if(state.assistantThinkingTimer){ clearInterval(state.assistantThinkingTimer); state.assistantThinkingTimer = null; }
+      if(state.assistantThinkingNode){ state.assistantThinkingNode.remove(); state.assistantThinkingNode = null; }
+    }
+    function speakText(text){
+      if(!("speechSynthesis" in window)) return;
+      if(!state.readAloudEnabled) return;
+      const msg = new SpeechSynthesisUtterance(String(text||"").slice(0,800));
+      msg.lang = "zh-CN";
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(msg);
+    }
+    function refreshReadAloudButton(){
+      elements.assistantReadAloudBtn.classList.toggle("is-active", Boolean(state.readAloudEnabled));
+      elements.assistantReadAloudBtn.title = state.readAloudEnabled ? "语音播报已开启" : "语音播报已关闭";
+    }
+    function refreshSearchButton(){
+      elements.assistantSearchBtn.classList.toggle("is-active", Boolean(state.assistantWebSearchEnabled));
+      elements.assistantSearchBtn.title = state.assistantWebSearchEnabled ? "联网搜索已开启" : "联网搜索已关闭";
+    }
+    function renderAssistantImages(){
+      const tray = elements.assistantImageTray;
+      tray.innerHTML = "";
+      if(!state.assistantImages.length){ tray.classList.add("hidden"); return; }
+      tray.classList.remove("hidden");
+      state.assistantImages.forEach((item, idx)=>{
+        const card = document.createElement("div");
+        card.className = "relative";
+        card.innerHTML = `<img src="${item.url}" class="w-14 h-14 object-cover rounded-lg border border-black/10"><button data-idx="${idx}" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-black text-white text-[10px] leading-4">×</button>`;
+        tray.appendChild(card);
+      });
+      tray.querySelectorAll("button[data-idx]").forEach(btn=>{
+        btn.addEventListener("click",()=>{
+          const idx = Number(btn.getAttribute("data-idx"));
+          state.assistantImages.splice(idx,1);
+          renderAssistantImages();
+        });
+      });
+    }
+    function fileToDataUrl(file){
+      return new Promise((resolve,reject)=>{
+        const reader = new FileReader();
+        reader.onload = ()=>resolve(String(reader.result||""));
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+    async function addAssistantImage(file){
+      if(!file || !file.type.startsWith("image/")) return;
+      if(state.assistantImages.length>=3){showToast("最多添加3张图片","error"); return;}
+      const url = await fileToDataUrl(file);
+      state.assistantImages.push({url});
+      renderAssistantImages();
+    }
+    function initVoiceInput(){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SR){ elements.assistantVoiceBtn.disabled = true; elements.assistantVoiceBtn.title = "当前浏览器不支持语音输入"; return; }
+      state.recognition = new SR();
+      state.recognition.lang = "zh-CN";
+      state.recognition.interimResults = false;
+      state.recognition.maxAlternatives = 1;
+      state.recognition.onresult = (event)=>{
+        const text = event.results?.[0]?.[0]?.transcript || "";
+        if(!text) return;
+        elements.assistantInput.value = elements.assistantInput.value ? `${elements.assistantInput.value}\n${text}` : text;
+      };
+      state.recognition.onend = ()=>{
+        state.recognizing = false;
+        elements.assistantVoiceBtn.classList.remove("is-active");
+      };
+    }
+    async function askAssistant(){
+      if(state.assistantLoading) return;
+      const question = (elements.assistantInput.value||"").trim();
+      if(!question && !state.assistantImages.length){showToast("先输入问题或添加图片","error"); elements.assistantInput.focus(); return;}
+      const sentImages = state.assistantImages.map(x=>x.url);
+      appendAssistantMessage("user", question || "", sentImages);
+      elements.assistantInput.value="";
+      state.assistantLoading = true;
+      elements.assistantAskBtn.disabled = true;
+      elements.assistantAskBtn.textContent = "思考中...";
+      startAssistantThinking();
+      try{
+        const response = await fetch("/api/assistant/chat",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({question, images:sentImages, web_search_enabled:state.assistantWebSearchEnabled})
+        });
+        const data = await response.json().catch(()=>({}));
+        if(!response.ok){
+          throw new Error(data.detail || `HTTP ${response.status}`);
+        }
+        const answer = data.answer || "助教暂时没有返回内容。";
+        appendAssistantMessage("assistant", answer, [], { usage:data.usage || null, modelUsed:data.model_used || "", citations:data.citations || [] });
+        speakText(answer);
+      }catch(error){
+        appendAssistantMessage("assistant", `抱歉，这次回答失败了：${error.message}`);
+      }finally{
+        stopAssistantThinking();
+        state.assistantImages = [];
+        renderAssistantImages();
+        state.assistantLoading = false;
+        elements.assistantAskBtn.disabled = false;
+        elements.assistantAskBtn.textContent = "提问";
+      }
+    }
+    async function loadModelLabels(){
+      const generateFallback = "mimo-v2-pro";
+      const assistantFallback = "mimo-v2-omni";
+      let generateModel = generateFallback;
+      let assistantModel = assistantFallback;
+      try{
+        const response = await fetch("/api/models");
+        if(response.ok){
+          const data = await response.json();
+          generateModel = data.generate_model || generateFallback;
+          assistantModel = data.assistant_model || assistantFallback;
+        }
+      }catch{}
+      elements.generateModelLabel.innerHTML = `<span class="model-dot"></span>Model: ${escapeHtml(generateModel)}`;
+      elements.assistantModelLabel.innerHTML = `<span class="model-dot"></span>Model: ${escapeHtml(assistantModel)}`;
+    }
+    async function generateFeedback(){
+      if(state.isGenerating)return;
+      if(!elements.studentName.value.trim()){showToast("请输入学生英文名","error"); elements.studentName.focus(); return;}
+      if(!elements.unitNumber.value.trim()){showToast("请输入单元号","error"); elements.unitNumber.focus(); return;}
+      let unitProgress=""; const unitNum=elements.unitNumber.value.trim(), lessonType=elements.lessonType.value, lessonNum=elements.lessonNumber.value;
+      if(lessonType==="Day"){unitProgress=`U${unitNum}Day${lessonNum}`; if(elements.hasPreview.checked&&elements.previewUnitNumber.value.trim()){const pType=elements.previewType.value, pUnit=elements.previewUnitNumber.value.trim(); unitProgress+=`&U${pUnit}${pType} Preview`;}}
+      else {unitProgress=`U${unitNum}${lessonType}${lessonNum}`;}
+      const previewErrorCountRaw = parseInt(document.getElementById("previewErrorCount").value,10);
+      const previewErrorCount = Number.isNaN(previewErrorCountRaw) ? 1 : Math.min(5, Math.max(1, previewErrorCountRaw));
+      const formData={student_name:elements.studentName.value.trim(),unit_progress:unitProgress,feedback_type:elements.feedbackType.value,greeting_time:elements.greetingTime.value,rating:elements.rating.value,lost_sections:elements.lostSections.value.trim(),error_notes:elements.errorNotes.value.trim(),preview_error_count:previewErrorCount,issues:Array.from(elements.issues).filter(cb=>cb.checked).map(cb=>cb.value)};
+      elements.greetingCard.classList.add("hidden"); elements.greetingText.textContent=""; state.greetingContent=""; state.fullContent="";
+      elements.emptyState.classList.add("hidden"); elements.markdownOutput.innerHTML=""; elements.feedbackContent.classList.remove("hidden");
+      elements.markdownOutput.contentEditable = "false";
+      elements.copyAllBtn.disabled=true; elements.copyGreetingBtn.disabled=true; elements.copyFeedbackBtn.disabled=true;
+      setButtonLoading(true); showGenerateStatus("正在连接生成服务...","info");
+      try{
+        const response=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(formData)}); if(!response.ok)throw new Error(`HTTP ${response.status}`);
+        const reader=response.body.getReader(), decoder=new TextDecoder();
+        while(true){
+          const {done,value}=await reader.read(); if(done)break;
+          const lines=decoder.decode(value).split("\n");
+          for(const line of lines){
+            if(!line.startsWith("data: "))continue;
+            try{
+              const data=JSON.parse(line.slice(6));
+              if(data.type==="greeting"){showGenerateStatus("问候语已生成，正在生成批改记录...","info"); state.greetingContent=data.content||""; elements.greetingText.textContent=state.greetingContent; elements.greetingCard.classList.remove("hidden"); elements.copyGreetingBtn.disabled=!state.greetingContent;}
+              else if(data.type==="header"){showGenerateStatus("模板生成完成，AI 正在扩写中...","info"); state.fullContent+=data.content||"";}
+              else if(data.type==="footer"){showGenerateStatus("正在添加备注信息...","info"); state.fullContent+=data.content||"";}
+              else if(data.type==="complete"||data.done){showGenerateStatus("生成完成","success"); elements.copyAllBtn.disabled=!(state.greetingContent||state.fullContent); elements.copyFeedbackBtn.disabled=!state.fullContent;}
+              else if(data.error){throw new Error(data.error);}
+              else if(data.content){showGenerateStatus("AI 正在生成解析...","info"); state.fullContent+=data.content;}
+              renderFeedback(); scrollToBottom();
+            }catch{}
+          }
+        }
+        showToast("反馈生成完成");
+        elements.markdownOutput.contentEditable = "true";
+      }catch(error){showGenerateStatus("生成失败: "+error.message,"error"); showToast("生成失败，请检查网络连接","error");}
+      finally{setButtonLoading(false); if(elements.markdownOutput.contentEditable!=="true"){elements.markdownOutput.contentEditable="true";}}
+    }
+    elements.lessonType.addEventListener("change",handleLessonTypeChange);
+    elements.hasPreview.addEventListener("change",handlePreviewChange);
+    elements.previewUnitNumber.addEventListener("input",updatePreviewCheckboxText);
+    elements.previewType.addEventListener("change",updatePreviewCheckboxText);
+    elements.rating.addEventListener("change",handleRatingChange);
+    elements.generateBtn.addEventListener("click",generateFeedback);
+    elements.copyAllBtn.addEventListener("click",async()=>{
+      const editedText=getCurrentFeedbackText(), editedHtml=getCurrentFeedbackHtml();
+      if(!state.greetingContent&&!editedText)return;
+      const greetingText = state.greetingContent ? `${state.greetingContent}\n\n` : "";
+      const greetingHtml = state.greetingContent ? `<p>${escapeHtml(state.greetingContent).replace(/\n/g,"<br>")}</p><p><br></p>` : "";
+      await copyRichToClipboard({
+        html:`${greetingHtml}${editedHtml}`,
+        text:`${greetingText}${editedText}`,
+        msg:"全部内容复制成功"
+      });
+    });
+    elements.copyGreetingBtn.addEventListener("click",()=>copyToClipboard(state.greetingContent,"问候语复制成功"));
+    elements.copyFeedbackBtn.addEventListener("click",()=>copyRichToClipboard({
+      html:getCurrentFeedbackHtml(),
+      text:getCurrentFeedbackText(),
+      msg:"反馈复制成功"
+    }));
+    elements.viewModeBtn.addEventListener("click",()=>{
+      state.fullContent = getCurrentFeedbackText();
+      state.viewMode = state.viewMode==="rendered" ? "raw" : "rendered";
+      syncViewModeButton();
+      renderFeedback();
+    });
+    document.getElementById("quickTaskPreset").addEventListener("change",(e)=>{
+      const v = e.target.value;
+      if(!v) return;
+      const input = document.getElementById("quickTaskContent");
+      input.value = v;
+      input.focus();
+      saveFormDraft();
+    });
+    document.getElementById("boldBtn").addEventListener("click",()=>applyEditorCommand("bold"));
+    document.getElementById("highlightBtn").addEventListener("click",()=>{
+      applyEditorCommand("hiliteColor","#fff59d");
+      applyEditorCommand("backColor","#fff59d");
+    });
+    document.getElementById("copyTaskBtn").addEventListener("click",()=>{const n=document.getElementById("quickTaskNumber").value,c=document.getElementById("quickTaskContent").value.trim(); if(!c){showToast("请输入Task内容","error"); return;} copyToClipboard(`**Task${n} ${c}部分**`,"Task内容复制成功");});
+    document.getElementById("copyReadingBtn").addEventListener("click",()=>{const u=document.getElementById("quickReadingUnit").value.trim(); if(!u){showToast("请输入单元号","error"); return;} const t=document.getElementById("quickReadingType").value; copyToClipboard(`**Reading Skill ${u}${t}**`,"Reading Skill复制成功");});
+    document.getElementById("copyVocabBtn").addEventListener("click",()=>copyToClipboard("**Vocabulary部分**","Vocabulary部分复制成功"));
+    document.getElementById("copyReadingPartBtn").addEventListener("click",()=>copyToClipboard("**Reading部分**","Reading部分复制成功"));
+    elements.assistantFab.addEventListener("click",()=>toggleAssistantPanel());
+    elements.assistantCloseBtn.addEventListener("click",()=>toggleAssistantPanel(false));
+    elements.assistantAskBtn.addEventListener("click",askAssistant);
+    elements.assistantImageBtn.addEventListener("click",()=>elements.assistantImageInput.click());
+    elements.assistantImageInput.addEventListener("change",async(e)=>{
+      const files = Array.from(e.target.files||[]);
+      for(const f of files){await addAssistantImage(f);}
+      elements.assistantImageInput.value = "";
+    });
+    elements.assistantInput.addEventListener("paste",async(e)=>{
+      const items = Array.from(e.clipboardData?.items||[]);
+      const imageItems = items.filter(i=>i.type && i.type.startsWith("image/"));
+      if(!imageItems.length) return;
+      e.preventDefault();
+      for(const item of imageItems){
+        const file = item.getAsFile();
+        if(file) await addAssistantImage(file);
+      }
+    });
+    elements.assistantVoiceBtn.addEventListener("click",()=>{
+      if(!state.recognition){showToast("当前浏览器不支持语音输入","error"); return;}
+      if(state.recognizing){state.recognition.stop(); return;}
+      state.recognizing = true;
+      elements.assistantVoiceBtn.classList.add("is-active");
+      state.recognition.start();
+    });
+    elements.assistantReadAloudBtn.addEventListener("click",()=>{
+      state.readAloudEnabled = !state.readAloudEnabled;
+      refreshReadAloudButton();
+    });
+    elements.assistantSearchBtn.addEventListener("click",()=>{
+      state.assistantWebSearchEnabled = !state.assistantWebSearchEnabled;
+      refreshSearchButton();
+    });
+    elements.assistantInput.addEventListener("keydown",(e)=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault(); askAssistant();}});
+    document.addEventListener("keydown",(e)=>{
+      if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){
+        e.preventDefault();
+        if(document.activeElement===elements.assistantInput){askAssistant(); return;}
+        generateFeedback();
+      }
+    });
+    restoreFormDraft(); setupDraftAutosave(); setupErrorNotesCounter(); handleLessonTypeChange(); handlePreviewChange(); handleRatingChange(); updatePreviewCheckboxText(); updatePreviewErrorCountVisibility(); syncViewModeButton(); loadModelLabels(); initVoiceInput(); refreshReadAloudButton(); refreshSearchButton();
+  </script>
 </body>
 </html>

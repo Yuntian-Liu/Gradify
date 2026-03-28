@@ -1,4 +1,4 @@
-# 🎓 Gradify - 英语作业反馈生成器
+﻿# 🎓 Gradify - 英语作业反馈生成器
 
 <div align="center">
 
@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-00a?logo=fastapi)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3.x-38b?logo=tailwind-css)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-V2.5-purple)
+![Version](https://img.shields.io/badge/Version-V3.0-purple)
 
 *A modern, elegant feedback generator for HOUHAI English teachers*
 
@@ -335,3 +335,61 @@ MIT License
 Made with ❤️ for 少儿英语老师们
 
 </div>
+
+---
+
+## v3.0 增补说明
+
+> 本节为 v3.0 的查漏补缺说明，仅增补，不替换原有文档内容。
+
+### 新增能力（v3.0）
+
+- 新增：Tutor Assistant 助教对话窗（独立于生成解析流程）。
+- 新增：图片理解（支持上传图片与粘贴图片）。
+- 新增：联网搜索开关（`web_search` tool calling）。
+- 新增：消息状态反馈（"正在思考中" + 计时器）。
+- 新增：回复 Token 统计展示（Prompt / Completion / Total）。
+- 新增：搜索用量展示（Tool Usage / Page Usage）与 Sources 链接展示。
+- 新增：助教消息 Markdown 渲染。
+- 新增：富文本编辑能力（输出区手动加粗/高亮）。
+
+### 优化与修复（v3.0）
+
+- 优化：整体 UI/UX 重构，顶部信息区、输出区、快捷区、弹窗层级统一。
+- 优化：版权与备案信息展示样式，增加 Open Source 入口图标化展示。
+- 修复：SSE 解析边界问题（全对场景无法生成）。
+- 修复：Markdown 横线异常与标题加粗漏判问题。
+- 修复：图片请求兼容性问题（多格式兼容 + 非空内容保护）。
+- 修复：模型名大小写导致的模型调用失败问题（模型名规范化）。
+
+### 环境变量增补（v3.0）
+
+在原有 `.env` 基础上，建议补充以下变量：
+
+```env
+# 解析生成模型（文本）
+OPENAI_MODEL=mimo-v2-pro
+
+# 助教文本模型
+ASSISTANT_MODEL=mimo-v2-omni
+
+# 助教视觉模型（有图时自动切换）
+ASSISTANT_VISION_MODEL=mimo-v2-omni
+
+# 助教独立网关（可选，不填则回退到 OPENAI_BASE_URL）
+ASSISTANT_BASE_URL=https://api.xiaomimimo.com/v1
+
+# 助教独立密钥（可选，不填则回退到 OPENAI_API_KEY）
+ASSISTANT_API_KEY=your-assistant-key
+```
+
+### 联网搜索说明（v3.0）
+
+- 助教对话窗可手动开启/关闭联网搜索。
+- 开启后后端会按 `tools: [{ type: "web_search", ... }]` 调用。
+- 若问题不需要联网，可关闭该开关以减少工具调用成本。
+
+### 版本记录
+
+- 详细版本历史请见 [CHANGELOG.md](CHANGELOG.md)
+
