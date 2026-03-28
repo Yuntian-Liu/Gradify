@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.2] - 2026-03-28
+
+### Fixed
+- Fixed rich-text divider copy loss: inserted dividers now persist when copying feedback to external rich-text editors.
+- Fixed heading adhesion issues in copied content (for example `Reading部分` sticking to adjacent lines) by aligning clipboard HTML structure with rendered layout.
+- Fixed overflow behavior in `Feedback Draft` editor: long lines now stay inside the container instead of pushing content off-canvas.
+- Fixed highlight toggle scope so un-highlighting no longer wipes unrelated highlighted text.
+- Fixed italic toggle scope so un-italicizing selected text no longer clears whole italic blocks.
+
+### Improved
+- Improved divider rendering consistency across edit, preview, and clipboard flows.
+- Improved readability and visual stability for long mixed-format paragraphs in the editable output area.
+
 ## [3.0.1] - 2026-03-28
 
 ### Fixed

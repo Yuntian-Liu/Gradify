@@ -78,11 +78,15 @@
     .output-scroll{min-height:0;height:calc(100% - 66px);overflow:auto;padding:14px}
     .output-frame{min-height:100%;border-radius:18px;border:1px solid rgba(0,0,0,.09);background:#fff;padding:18px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
     .greeting-card{border:1px solid rgba(46,196,182,.35);background:linear-gradient(140deg,rgba(235,255,251,.9),rgba(255,255,255,.95));border-radius:14px;padding:12px;margin-bottom:12px;animation:fadeUp .28s ease}
-    .markdown-content{line-height:1.9;white-space:pre-wrap;font-size:15px;color:#2d2d2d}
+    .markdown-content{line-height:1.9;white-space:pre-wrap;font-size:15px;color:#2d2d2d;overflow-wrap:anywhere;word-break:break-word;overflow-x:hidden}
+    .markdown-content *{max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+    .markdown-content table{width:100%!important;table-layout:fixed;border-collapse:collapse}
+    .markdown-content td,.markdown-content th{white-space:normal!important;overflow-wrap:anywhere;word-break:break-word;vertical-align:top}
+    .markdown-content [style*="white-space:nowrap"],.markdown-content [style*="white-space: nowrap"]{white-space:normal!important}
     .markdown-content h1,.markdown-content h2,.markdown-content h3{font-size:1.02em;line-height:1.5;font-weight:800;margin:.25rem 0 .4rem;color:#0f4e47}
     .markdown-content p{margin:.2rem 0 .55rem}
     .markdown-content strong{background:linear-gradient(120deg, rgba(255,191,105,.38), rgba(46,196,182,.24));padding:0 .3em;border-radius:.3em}
-    .markdown-content hr{display:none!important}
+    .markdown-content hr{display:block;border:0;border-top:2px solid rgba(88,99,120,.45);margin:.18rem 0;height:0}
     .markdown-content u,.markdown-content ins,.markdown-content del{text-decoration:none!important}
     .markdown-content[contenteditable="true"]{border:1px dashed transparent;padding:6px;border-radius:8px}
     .markdown-content[contenteditable="true"]:focus{outline:none;border-color:rgba(46,196,182,.45);background:rgba(46,196,182,.03)}
@@ -110,7 +114,7 @@
     .icon-btn:hover{background:#f7f7f7;transform:translateY(-1px)}
     .icon-btn.is-active{background:rgba(46,196,182,.12);border-color:rgba(46,196,182,.45);color:#0f6d63}
     .assistant-msgs{overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-    .assistant-bubble{padding:9px 11px;border-radius:12px;line-height:1.6;font-size:13px;white-space:pre-wrap}
+    .assistant-bubble{padding:9px 11px;border-radius:12px;line-height:1.6;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
     .assistant-user{align-self:flex-end;max-width:85%;background:#f3edff;border:1px solid rgba(132,104,211,.32)}
     .assistant-ai{align-self:flex-start;max-width:90%;background:#fff5ec;border:1px solid rgba(255,107,53,.3)}
     .assistant-md p{margin:.1rem 0 .45rem}
@@ -365,7 +369,9 @@
                 <div class="flex items-center gap-2">
                   <button id="viewModeBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition">Mode: Rendered</button>
                   <button id="boldBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition">Bold</button>
+                  <button id="italicBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition">Italic</button>
                   <button id="highlightBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition">Highlight</button>
+                  <button id="dividerBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition">Divider</button>
                   <button id="copyFeedbackBtn" type="button" class="px-2 py-1 rounded-lg border border-black/15 text-xs hover:bg-black/5 transition" disabled>仅复制反馈</button>
                 </div>
               </div>
@@ -469,20 +475,29 @@
     function syncViewModeButton(){elements.viewModeBtn.textContent = state.viewMode==="rendered" ? "Mode: Rendered" : "Mode: Raw";}
     function preprocessMarkdownText(text){
       const sanitized = text
-        .replace(/<\/?(u|hr|ins|del)\b[^>]*>/gi,"")
+        .replace(/<\/?(u|ins|del)\b[^>]*>/gi,"")
         .replace(/^\s*([*_]\s*){3,}\s*$/gm,(m)=>m.replace(/([*_])/g,"\\$1"))
         .replace(/~~([^~]+)~~/g,"$1")
         .replace(/__([^_]+)__/g,"$1")
         .replace(/\n{2,}(?=(?:U\d+[AB]\s+Preview部分|Preview部分|Vocabulary部分|Reading部分|Task\d+\s.+部分|Task\s*6\s*判断题|听记作业|Reading Skill\s.+))/g,"\n");
-      return sanitized
-        .split("\n")
-        .map(line=>{
-          const t=line.trim();
-          if(!t) return line;
-          if(/^(Vocabulary部分|Reading部分|Reading Skill\s.+|Task\d+\s.+部分|Task\s*6\s*判断题|听记作业|U\d+[AB]\s+Preview部分|Preview部分)$/i.test(t)) return `**${t}**`;
-          return line;
-        })
-        .join("\n");
+      const headingRe=/^(Vocabulary部分|Reading部分|Reading Skill\s.+|Task\d+\s.+部分|Task\s*6\s*判断题|Task\s*6\s*判断部分|听记作业|U\d+[AB]\s+Preview部分|Preview部分)$/i;
+      const issueHeadingRe=/^(Task\s*6\s*判断题|Task\s*6\s*判断部分|听记作业|U\d+[AB]\s+Preview部分|Preview部分|Vocabulary部分)$/i;
+      const lines=sanitized.split("\n");
+      let prevIsIssueHeading=false;
+      return lines.map((line)=>{
+        const t=line.trim();
+        if(!t){prevIsIssueHeading=false; return line;}
+        if(headingRe.test(t)){
+          prevIsIssueHeading = issueHeadingRe.test(t);
+          return `**${t}**`;
+        }
+        if(prevIsIssueHeading){
+          prevIsIssueHeading=false;
+          return `*${t}*`;
+        }
+        prevIsIssueHeading=false;
+        return line;
+      }).join("\n");
     }
     function applyEditorCommand(command, value=null){
       elements.markdownOutput.focus();
@@ -493,8 +508,11 @@
       const range = sel.getRangeAt(0);
       const text = range.toString();
       if(!text) return;
-      const node = command==="bold" ? document.createElement("strong") : document.createElement("mark");
-      if(command!=="bold"){
+      let node;
+      if(command==="bold") node=document.createElement("strong");
+      else if(command==="italic") node=document.createElement("em");
+      else node=document.createElement("mark");
+      if(command!=="bold" && command!=="italic"){
         node.style.backgroundColor = "#fff59d";
         node.style.padding = "0 .2em";
         node.style.borderRadius = ".2em";
@@ -539,6 +557,78 @@
       }
       return hits;
     }
+    function hasItalicStyle(el){
+      if(!el || !el.style) return false;
+      const fs = (el.style.fontStyle || "").trim().toLowerCase();
+      return fs === "italic";
+    }
+    function clearItalicStyle(el){
+      if(!el || !el.style) return;
+      el.style.removeProperty("font-style");
+      if(!el.getAttribute("style")) unwrapElement(el);
+    }
+    function getItalicElementsInRange(range){
+      const root = elements.markdownOutput;
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+      const hits = [];
+      let node = walker.currentNode;
+      while(node){
+        if(range.intersectsNode(node)){
+          if(node.tagName==="EM" || node.tagName==="I") hits.push(node);
+          else if(hasItalicStyle(node)) hits.push(node);
+        }
+        node = walker.nextNode();
+      }
+      return hits;
+    }
+    function toggleItalicSelection(){
+      elements.markdownOutput.focus();
+      const sel = window.getSelection();
+      if(!sel || !sel.rangeCount || sel.isCollapsed) return;
+      // 优先使用原生命令按“当前选区”切换，避免误伤整段。
+      const ok = document.execCommand("italic", false);
+      if(ok) return;
+      // 兜底：仅当选区两端在同一个斜体节点中时，才局部取消。
+      const anchorParent = sel.anchorNode && (sel.anchorNode.nodeType===1 ? sel.anchorNode : sel.anchorNode.parentElement);
+      const focusParent = sel.focusNode && (sel.focusNode.nodeType===1 ? sel.focusNode : sel.focusNode.parentElement);
+      const anchorItalic = anchorParent && anchorParent.closest ? anchorParent.closest("em,i") : null;
+      const focusItalic = focusParent && focusParent.closest ? focusParent.closest("em,i") : null;
+      if(anchorItalic && focusItalic && anchorItalic===focusItalic){
+        unwrapElement(anchorItalic);
+        return;
+      }
+      applyEditorCommand("italic");
+    }
+    function insertDivider(){
+      elements.markdownOutput.focus();
+      const inserted = document.execCommand("insertHorizontalRule", false);
+      if(inserted){
+        // Normalize browser default <hr> style so divider is always visible.
+        elements.markdownOutput.querySelectorAll("hr").forEach((hr)=>{
+          hr.style.border = "0";
+          hr.style.borderTop = "2px solid rgba(88,99,120,.45)";
+          hr.style.margin = ".18rem 0";
+          hr.style.height = "0";
+          hr.style.display = "block";
+        });
+        return;
+      }
+      const sel = window.getSelection();
+      if(!sel || !sel.rangeCount) return;
+      const range = sel.getRangeAt(0);
+      const hr = document.createElement("hr");
+      hr.style.border = "0";
+      hr.style.borderTop = "2px solid rgba(88,99,120,.45)";
+      hr.style.margin = ".18rem 0";
+      hr.style.height = "0";
+      hr.style.display = "block";
+      range.deleteContents();
+      range.insertNode(hr);
+      range.setStartAfter(hr);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
     function toggleHighlightSelection(){
       elements.markdownOutput.focus();
       const sel = window.getSelection();
@@ -546,10 +636,9 @@
       const range = sel.getRangeAt(0);
       const highlighted = getHighlightElementsInRange(range);
       if(highlighted.length){
-        highlighted.forEach((el)=>{
-          if(el.tagName==="MARK") unwrapElement(el);
-          else clearHighlightStyle(el);
-        });
+        // 仅对当前选区取消高亮，避免误伤整段/全部高亮。
+        applyEditorCommand("hiliteColor","transparent");
+        applyEditorCommand("backColor","transparent");
         return;
       }
       applyEditorCommand("hiliteColor","#fff59d");
@@ -563,11 +652,9 @@
       const source = preprocessMarkdownText(state.fullContent || "");
       if(window.marked){
         const renderer = new marked.Renderer();
-        renderer.hr = () => "";
         elements.markdownOutput.innerHTML = marked.parse(source, { breaks:true, gfm:true, renderer });
-        const suspicious = elements.markdownOutput.querySelectorAll("hr,u,ins,del");
+        const suspicious = elements.markdownOutput.querySelectorAll("u,ins,del");
         suspicious.forEach((el)=>{
-          if(el.tagName === "HR"){ el.remove(); return; }
           const frag = document.createDocumentFragment();
           while(el.firstChild) frag.appendChild(el.firstChild);
           el.replaceWith(frag);
@@ -589,8 +676,12 @@
     }
     function getCurrentFeedbackHtml(){
       const rich = (elements.markdownOutput.innerHTML||"").trim();
-      if(state.viewMode==="rendered" && rich) return rich;
-      return `<div style="white-space:pre-wrap;">${escapeHtml(getCurrentFeedbackText())}</div>`;
+      if(state.viewMode==="rendered" && rich){
+        const clone = elements.markdownOutput.cloneNode(true);
+        // Keep rich-text semantics (bold/italic/highlight/underline/divider) in clipboard.
+        return `<div style="white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;max-width:100%;">${clone.innerHTML}</div>`;
+      }
+      return `<div style="white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;max-width:100%;">${escapeHtml(getCurrentFeedbackText())}</div>`;
     }
     function handleLessonTypeChange(){elements.feedbackType.value=elements.lessonType.value==="Day"?"伴学手册反馈":"练习反馈";}
     function updatePreviewCheckboxText(){
@@ -937,11 +1028,18 @@
       saveFormDraft();
     });
     document.getElementById("boldBtn").addEventListener("click",()=>applyEditorCommand("bold"));
+    document.getElementById("italicBtn").addEventListener("click",toggleItalicSelection);
     document.getElementById("highlightBtn").addEventListener("click",toggleHighlightSelection);
-    document.getElementById("copyTaskBtn").addEventListener("click",()=>{const n=document.getElementById("quickTaskNumber").value,c=document.getElementById("quickTaskContent").value.trim(); if(!c){showToast("请输入Task内容","error"); return;} copyToClipboard(`**Task${n} ${c}部分**`,"Task内容复制成功");});
-    document.getElementById("copyReadingBtn").addEventListener("click",()=>{const u=document.getElementById("quickReadingUnit").value.trim(); if(!u){showToast("请输入单元号","error"); return;} const t=document.getElementById("quickReadingType").value; copyToClipboard(`**Reading Skill ${u}${t}**`,"Reading Skill复制成功");});
-    document.getElementById("copyVocabBtn").addEventListener("click",()=>copyToClipboard("**Vocabulary部分**","Vocabulary部分复制成功"));
-    document.getElementById("copyReadingPartBtn").addEventListener("click",()=>copyToClipboard("**Reading部分**","Reading部分复制成功"));
+    document.getElementById("dividerBtn").addEventListener("click",insertDivider);
+    elements.markdownOutput.addEventListener("keydown",(e)=>{
+      if(e.key!=="Enter" || e.ctrlKey || e.metaKey || e.altKey) return;
+      e.preventDefault();
+      document.execCommand("insertLineBreak");
+    });
+    document.getElementById("copyTaskBtn").addEventListener("click",()=>{const n=document.getElementById("quickTaskNumber").value,c=document.getElementById("quickTaskContent").value.trim(); if(!c){showToast("请输入Task内容","error"); return;} copyRichToClipboard({html:`<strong>Task${n} ${escapeHtml(c)}部分</strong>`,text:`Task${n} ${c}部分`,msg:"Task内容复制成功"});});
+    document.getElementById("copyReadingBtn").addEventListener("click",()=>{const u=document.getElementById("quickReadingUnit").value.trim(); if(!u){showToast("请输入单元号","error"); return;} const t=document.getElementById("quickReadingType").value; copyRichToClipboard({html:`<strong>Reading Skill ${escapeHtml(u+t)}</strong>`,text:`Reading Skill ${u}${t}`,msg:"Reading Skill复制成功"});});
+    document.getElementById("copyVocabBtn").addEventListener("click",()=>copyRichToClipboard({html:"<strong>Vocabulary部分</strong>",text:"Vocabulary部分",msg:"Vocabulary部分复制成功"}));
+    document.getElementById("copyReadingPartBtn").addEventListener("click",()=>copyRichToClipboard({html:"<strong>Reading部分</strong>",text:"Reading部分",msg:"Reading部分复制成功"}));
     elements.assistantFab.addEventListener("click",()=>toggleAssistantPanel());
     elements.assistantCloseBtn.addEventListener("click",()=>toggleAssistantPanel(false));
     elements.assistantAskBtn.addEventListener("click",askAssistant);
