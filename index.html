@@ -38,7 +38,7 @@
       background-image:radial-gradient(rgba(0,0,0,.22) .45px, transparent .45px);background-size:11px 11px;
     }
     .shell{max-width:1560px;margin:0 auto;padding:18px 18px 14px;display:grid;grid-template-rows:auto 1fr;min-height:100vh;gap:14px}
-    .header-wrap{border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(9px);border-radius:22px;box-shadow:var(--soft);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+    .header-wrap{border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(9px);border-radius:22px;box-shadow:var(--soft);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
     .brand-chip{width:44px;height:44px;border-radius:14px;background:linear-gradient(145deg,#fef2da,#ffd4a8);display:grid;place-items:center;color:#fff;box-shadow:0 10px 26px rgba(255,107,53,.28), inset 0 1px 0 rgba(255,255,255,.6);flex-shrink:0;border:1px solid rgba(255,130,68,.35)}
     .meta-chip{
       display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;border:1px solid rgba(0,0,0,.12);
@@ -50,6 +50,32 @@
       background:linear-gradient(150deg,#ffffff,#f2f4f8);font-weight:700;color:#1f2a3a;transition:transform .2s ease, box-shadow .2s ease
     }
     .gh-chip:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,.1)}
+    .matrix-strip{
+      width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
+      padding-top:10px;border-top:1px solid rgba(0,0,0,.08)
+    }
+    .matrix-mini{
+      display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
+      min-width:0;padding:10px 12px;border-radius:16px;border:1px solid rgba(0,0,0,.08);
+      background:linear-gradient(140deg,rgba(255,255,255,.94),rgba(255,250,245,.92));
+      box-shadow:0 10px 24px rgba(0,0,0,.05);text-decoration:none;color:inherit;
+      transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease
+    }
+    .matrix-mini:hover{transform:translateY(-1px);box-shadow:0 14px 28px rgba(0,0,0,.08)}
+    .matrix-mini.current{border-color:rgba(46,196,182,.35);background:linear-gradient(140deg,rgba(237,255,252,.95),rgba(255,255,255,.95))}
+    .matrix-mini-icon{
+      width:38px;height:38px;border-radius:13px;display:grid;place-items:center;color:#fff;flex-shrink:0;
+      box-shadow:0 10px 22px rgba(0,0,0,.12)
+    }
+    .matrix-mini-main{min-width:0}
+    .matrix-mini-title{font-size:15px;line-height:1.2;font-weight:800;color:#243447;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .matrix-mini-text{font-size:12px;line-height:1.35;color:#667085;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+    .matrix-mini-side{display:flex;align-items:center;gap:8px;justify-content:flex-end;flex-shrink:0}
+    .matrix-mini-badge{
+      display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;border:1px solid rgba(0,0,0,.08);
+      background:rgba(255,255,255,.78);font-size:11px;font-weight:700;color:#55606f
+    }
+    .matrix-mini-arrow{color:#52627a}
     .workspace{min-height:0;display:grid;grid-template-columns:1.1fr 1.35fr;gap:14px}
     .panel{min-height:0;border:1px solid var(--line);border-radius:22px;background:var(--panel);backdrop-filter:blur(9px);box-shadow:var(--soft);overflow:hidden}
     .left-panel{display:grid;grid-template-rows:1fr auto auto}
@@ -130,7 +156,13 @@
     .field-meta{margin-top:8px;text-align:right;font-size:12px;color:var(--muted)}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     @media (max-width:1200px){.workspace{grid-template-columns:1fr}.right-panel{min-height:58vh}}
-    @media (max-width:768px){.shell{padding:12px 10px}.header-wrap,.panel{border-radius:16px}.section-card{border-radius:14px}.assistant-dock{right:12px;bottom:14px}.assistant-panel{right:12px;bottom:82px;height:58vh;width:calc(100vw - 24px)}}
+    @media (max-width:768px){
+      .shell{padding:12px 10px}.header-wrap,.panel{border-radius:16px}.section-card{border-radius:14px}.assistant-dock{right:12px;bottom:14px}.assistant-panel{right:12px;bottom:82px;height:58vh;width:calc(100vw - 24px)}
+      .matrix-strip{grid-template-columns:1fr}
+      .matrix-mini{grid-template-columns:auto 1fr auto;padding:9px 10px}
+      .matrix-mini-title{font-size:14px}
+      .matrix-mini-text{font-size:11px}
+    }
     @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
   </style>
 </head>
@@ -181,6 +213,62 @@
           <span>Copyright © LYT 2024~2026 All Rights Reserved</span>
           <span class="px-2 py-1 rounded-lg border border-black/10 bg-white/80 text-slate-700">YTUN 版权所有</span>
         </div>
+      </div>
+
+      <div class="matrix-strip">
+        <div class="matrix-mini current">
+          <div class="matrix-mini-icon" style="background:linear-gradient(145deg,#ff8b4a,#2ec4b6);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="5" y="4.5" width="14" height="15" rx="3.2" stroke="#fff" stroke-width="1.8"/>
+              <path d="M8.2 9h7.2M8.2 12.2h7.2M8.2 15.4h4.4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="m15.5 6.8 1.7 1.7 2.9-2.9" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="matrix-mini-main">
+            <div class="matrix-mini-title">Gradify Studio</div>
+            <div class="matrix-mini-text">批改作业，统一反馈，提高效率</div>
+          </div>
+          <div class="matrix-mini-side">
+            <span class="matrix-mini-badge">当前站点</span>
+            <span class="matrix-mini-arrow">↗</span>
+          </div>
+        </div>
+
+        <a class="matrix-mini" href="https://selfie.ytunx.com/" target="_blank" rel="noopener noreferrer">
+          <div class="matrix-mini-icon" style="background:linear-gradient(145deg,#5b7cff,#ff8a63);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="8.5" r="3.2" stroke="#fff" stroke-width="1.8"/>
+              <path d="M6.3 18c1.4-3.1 3.8-4.7 5.7-4.7S16.3 14.9 17.7 18" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="matrix-mini-main">
+            <div class="matrix-mini-title">碳碳四键丨多维空间</div>
+            <div class="matrix-mini-text">展示项目，整理经历，汇总信息</div>
+          </div>
+          <div class="matrix-mini-side">
+            <span class="matrix-mini-badge">主入口</span>
+            <span class="matrix-mini-arrow">↗</span>
+          </div>
+        </a>
+
+        <a class="matrix-mini" href="https://myscore.ytunx.com/" target="_blank" rel="noopener noreferrer">
+          <div class="matrix-mini-icon" style="background:linear-gradient(145deg,#2f7a74,#8d63ff);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 19h14" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+              <rect x="6.5" y="12.5" width="2.8" height="6.5" rx="1" fill="#fff"/>
+              <rect x="10.6" y="9.5" width="2.8" height="9.5" rx="1" fill="#fff" opacity=".92"/>
+              <rect x="14.7" y="6.5" width="2.8" height="12.5" rx="1" fill="#fff" opacity=".82"/>
+            </svg>
+          </div>
+          <div class="matrix-mini-main">
+            <div class="matrix-mini-title">MyScore</div>
+            <div class="matrix-mini-text">记录成绩，查看趋势，整理反馈</div>
+          </div>
+          <div class="matrix-mini-side">
+            <span class="matrix-mini-badge">学习工具</span>
+            <span class="matrix-mini-arrow">↗</span>
+          </div>
+        </a>
       </div>
     </header>
 
