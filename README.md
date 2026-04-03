@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-00a?logo=fastapi)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3.x-38b?logo=tailwind-css)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-V3.0-purple)
+![Version](https://img.shields.io/badge/Version-V3.0.3-purple)
 
 *A modern, elegant feedback generator for HOUHAI English teachers*
 
@@ -44,6 +44,7 @@ Gradify 是一款专为少儿英语老师设计的 Web 应用，帮助您通过*
 - 📊 **状态提示** - 四阶段生成进度可视化（问候语→模板→AI扩写→完成）
 - 🎲 **多模板随机** - 问候语/评级话术支持多种模板随机选择
 - 📜 **ICP备案** - 合规的备案信息展示
+- 🦴 **骨架屏加载** - AI 生成过程中展示骨架屏动画，提升等待体验
 
 ---
 
@@ -148,6 +149,8 @@ Task3造句: 3.没懂what sports，选了颜色。6.主谓一致错
 阅读: 第2题细节题定位错误
 ```
 
+> 💡 输入区下方配有 5 档渐变色条指示器，实时反映速记信息量（简短/偏少/不错/详细/超详细，上限 250 字）。
+
 ### 未交/不规范情况
 
 勾选相关选项，系统会自动追加提醒文本：
@@ -193,11 +196,14 @@ Task3造句: 3.没懂what sports，选了颜色。6.主谓一致错
 ```
 gradify/
 ├── main.py              # FastAPI 后端服务
-├── index.html           # 前端页面（单文件）
+├── index.html           # 前端页面
+├── static/              # 静态资源目录
+│   └── app.js           # 前端逻辑
 ├── requirements.txt     # Python 依赖
 ├── .env.example         # 环境变量模板
 ├── .gitignore          # Git 忽略规则
 ├── LICENSE             # 开源许可证
+├── CHANGELOG.md        # 版本更新日志
 └── README.md           # 项目文档
 ```
 
@@ -393,3 +399,21 @@ ASSISTANT_API_KEY=your-assistant-key
 
 - 详细版本历史请见 [CHANGELOG.md](CHANGELOG.md)
 
+## v3.0.3 增补说明
+
+> 本节为 v3.0.3 的查漏补缺说明，仅增补，不替换原有文档内容。
+
+### 新增能力（v3.0.3）
+
+- 新增：前端代码模块化，JavaScript 从 `index.html` 提取至 `static/app.js`，配合 FastAPI 静态文件服务。
+- 新增：XSS 防护（`sanitizeHtml`），剪贴板复制与输出渲染均过滤危险标签与事件属性。
+- 新增：AI 生成过程骨架屏加载动画（Skeleton Loading + Shimmer），替代空白等待。
+- 新增：Error Notes 输入区 5 档渐变色条指示器（简短→偏少→不错→详细→超详细，上限 250 字）。
+- 新增：助教面板拖拽调整大小，尺寸自动持久化到 localStorage。
+- 新增：Quick Phrases Task 预设下拉（造句 / Vocabulary / Grammar / Match / Reading）。
+
+### 优化与修复（v3.0.3）
+
+- 优化：应用初始化增加逐步骤错误隔离（`initApp`），单个模块失败不影响整体加载。
+- 优化：`Ctrl+Enter` 快捷键作用域限定为表单区和输出区，避免在助教输入框误触生成。
+- 修复：富文本编辑加粗/斜体/高亮 Toggle 行为异常（恢复原生 `execCommand` 实现，不再嵌套/堆叠）。

@@ -9,6 +9,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
@@ -458,14 +459,14 @@ async def get_models():
     }
 
 
+# 静态文件服务（必须在 catch-all 路由之前）
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
 @app.get("/")
 async def index():
     """返回前端页面"""
     return FileResponse("index.html")
-
-
-# 静态文件服务（如果有额外资源）
-# app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ============================================================================
 # 启动入口

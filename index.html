@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -103,7 +103,7 @@
     .status-pill{font-size:12px;border:1px solid rgba(0,0,0,.1);border-radius:999px;padding:5px 10px;color:#254a46;background:rgba(255,255,255,.88)}
     .output-scroll{min-height:0;height:calc(100% - 66px);overflow:auto;padding:14px}
     .output-frame{min-height:100%;border-radius:18px;border:1px solid rgba(0,0,0,.09);background:#fff;padding:18px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
-    .greeting-card{border:1px solid rgba(46,196,182,.35);background:linear-gradient(140deg,rgba(235,255,251,.9),rgba(255,255,255,.95));border-radius:14px;padding:12px;margin-bottom:12px;animation:fadeUp .28s ease}
+    .greeting-card{border:1px solid rgba(46,196,182,.35);background:linear-gradient(140deg,rgba(235,251,251,.9),rgba(255,255,255,.95));border-radius:14px;padding:12px;margin-bottom:12px;animation:fadeUp .28s ease}
     .markdown-content{line-height:1.9;white-space:pre-wrap;font-size:15px;color:#2d2d2d;overflow-wrap:anywhere;word-break:break-word;overflow-x:hidden}
     .markdown-content *{max-width:100%;overflow-wrap:anywhere;word-break:break-word}
     .markdown-content table{width:100%!important;table-layout:fixed;border-collapse:collapse}
@@ -116,6 +116,8 @@
     .markdown-content u,.markdown-content ins,.markdown-content del{text-decoration:none!important}
     .markdown-content[contenteditable="true"]{border:1px dashed transparent;padding:6px;border-radius:8px}
     .markdown-content[contenteditable="true"]:focus{outline:none;border-color:rgba(46,196,182,.45);background:rgba(46,196,182,.03)}
+
+    /* Change 6: Assistant panel flexible height */
     .assistant-dock{position:fixed;right:16px;bottom:24px;z-index:45;display:flex;align-items:center;gap:10px}
     .assistant-fab{
       width:52px;height:52px;border-radius:16px;border:1px solid rgba(0,0,0,.12);
@@ -132,14 +134,26 @@
     }
     .assistant-dock:hover .assistant-hover-text{max-width:280px;opacity:1;padding:10px 14px}
     .assistant-panel{
-      position:fixed;right:24px;bottom:96px;z-index:46;width:min(520px,calc(100vw - 28px));height:520px;
+      position:fixed;right:24px;bottom:96px;z-index:46;width:min(520px,calc(100vw - 28px));
+      height:520px;min-width:360px;min-height:300px;max-width:90vw;max-height:85vh;
       border:1px solid rgba(0,0,0,.12);border-radius:18px;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);
       box-shadow:0 22px 46px rgba(0,0,0,.2);display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;
+    }
+    .assistant-resize-handle{
+      position:absolute;right:0;bottom:0;width:16px;height:16px;
+      cursor:nwse-resize;z-index:5;
+      opacity:.4;transition:opacity .15s;
+    }
+    .assistant-resize-handle:hover{opacity:.7}
+    .assistant-resize-handle::after{
+      content:"";position:absolute;right:4px;bottom:4px;width:8px;height:8px;
+      border-right:2px solid #94a3b8;border-bottom:2px solid #94a3b8;border-radius:2px;
+      transform:rotate(-45deg) translate(1px,1px);
     }
     .icon-btn{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;border:1px solid rgba(0,0,0,.15);background:#fff;transition:all .2s ease}
     .icon-btn:hover{background:#f7f7f7;transform:translateY(-1px)}
     .icon-btn.is-active{background:rgba(46,196,182,.12);border-color:rgba(46,196,182,.45);color:#0f6d63}
-    .assistant-msgs{overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+    .assistant-msgs{overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:200px;max-height:calc(70vh - 120px)}
     .assistant-bubble{padding:9px 11px;border-radius:12px;line-height:1.6;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
     .assistant-user{align-self:flex-end;max-width:85%;background:#f3edff;border:1px solid rgba(132,104,211,.32)}
     .assistant-ai{align-self:flex-start;max-width:90%;background:#fff5ec;border:1px solid rgba(255,107,53,.3)}
@@ -153,8 +167,62 @@
     .assistant-panel.hidden{display:none}
     #toastContainer{pointer-events:none}
     #toastContainer > div{pointer-events:auto}
-    .field-meta{margin-top:8px;text-align:right;font-size:12px;color:var(--muted)}
+
+    /* Change 7: Loading Skeleton */
+    .skeleton-container{padding:20px}
+    .skeleton-line{
+      height:14px;background:linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%);
+      background-size:200% 100%;border-radius:6px;animation:skeleton-shimmer 1.5s ease-in-out infinite;
+      margin-bottom:10px
+    }
+    .skeleton-line.short{width:40%}
+    .skeleton-line.medium{width:70%}
+    .skeleton-line.long{width:95%}
+    .skeleton-line:last-child{margin-bottom:0}
+    @keyframes skeleton-shimmer{
+      0%{background-position:200% 0}
+      100%{background-position:-200% 0}
+    }
+    .skeleton-message{
+      text-align:center;padding:16px;color:#64748b;font-size:14px;font-weight:600;
+      display:flex;align-items:center;justify-content:center;gap:10px
+    }
+    .skeleton-spinner{
+      width:18px;height:18px;border:2px solid #e5e7eb;border-top-color:#2ec4b6;
+      border-radius:50%;animation:spin .8s linear infinite;display:inline-block
+    }
+
+    /* Change 10: Error Notes Color Bar Indicator */
+    .notes-bar-container{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+    .notes-bar-track{
+      width:100%;height:8px;border-radius:999px;background:#f1f5f9;overflow:hidden;
+      position:relative;box-shadow:inset 0 1px 3px rgba(0,0,0,.08)
+    }
+    .notes-bar-fill{
+      height:100%;border-radius:999px;width:0%;
+      transition:width .3s cubic-bezier(.4,0,.2,1), background .4s ease;position:relative
+    }
+    .notes-bar-fill.zone-brief{background:linear-gradient(90deg,#ff6b6b,#ffa07a)}
+    .notes-bar-fill.zone-good{background:linear-gradient(90deg,#fbbf24,#34d399)}
+    .notes-bar-fill.zone-optimal{background:linear-gradient(90deg,#2ec4b6,#06b6d4)}
+    .notes-bar-fill.zone-thorough{background:linear-gradient(90deg,#06b6d4,#6366f1)}
+    .notes-bar-fill.zone-extreme{background:linear-gradient(90deg,#6366f1,#8b5cf6)}
+    .notes-bar-label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#64748b;font-weight:600}
+    .notes-bar-count{font-variant-numeric:tabular-nums;color:#334155}
+    .notes-bar-hint{font-size:10px;padding:2px 8px;border-radius:999px;background:#f1f5f9;transition:background .3s ease,color .3s ease}
+    .notes-bar-hint.hint-brief{background:#fef2f2;color:#dc2626}
+    .notes-bar-hint.hint-good{background:#fffbeb;color:#d97706}
+    .notes-bar-hint.hint-optimal{background:#ecfdf5;color:#059669}
+    .notes-bar-hint.hint-thorough{background:#eff6ff;color:#2563eb}
+    .notes-bar-hint.hint-extreme{background:#f5f3ff;color:#7c3aed}
+    @keyframes notes-bar-pulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(46,196,182,.3)}
+      50%{box-shadow:0 0 0 4px rgba(46,196,182,0)}
+    }
+    .notes-bar-fill.zone-optimal{animation:notes-bar-pulse 2s ease-in-out infinite}
+
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width:1200px){.workspace{grid-template-columns:1fr}.right-panel{min-height:58vh}}
     @media (max-width:768px){
       .shell{padding:12px 10px}.header-wrap,.panel{border-radius:16px}.section-card{border-radius:14px}.assistant-dock{right:12px;bottom:14px}.assistant-panel{right:12px;bottom:82px;height:58vh;width:calc(100vw - 24px)}
@@ -210,7 +278,7 @@
           </a>
         </div>
         <div class="text-xs text-slate-500 inline-flex items-center gap-2">
-          <span>Copyright © LYT 2024~2026 All Rights Reserved</span>
+          <span>Copyright &copy; LYT 2024~2026 All Rights Reserved</span>
           <span class="px-2 py-1 rounded-lg border border-black/10 bg-white/80 text-slate-700">YTUN 版权所有</span>
         </div>
       </div>
@@ -427,7 +495,7 @@
             <input id="quickReadingUnit" class="input-solid w-20 text-center" type="text" maxlength="2" placeholder="单元号">
             <select id="quickReadingType" class="input-solid w-16"><option value="A">A</option><option value="B">B</option></select>
             <div></div>
-            <button id="copyReadingBtn" type="button" class="px-3 rounded-xl text-sm font-semibold text-white bg-cyan hover:brightness-110 transition">复制</button>
+            <button id="copyReadingBtn" type="button" class="px-3 py-2 rounded-xl text-sm font-semibold text-white bg-cyan hover:brightness-110 transition">复制</button>
           </div>
           <div class="flex flex-wrap gap-2">
             <button id="copyVocabBtn" type="button" class="px-3 py-1.5 rounded-lg border border-black/15 text-sm hover:bg-black/5 transition">Vocabulary部分</button>
@@ -448,7 +516,24 @@
             <div id="emptyState" class="h-full min-h-[300px] grid place-items-center text-center text-slate-500">
               <div>
                 <p class="font-semibold text-slate-700 mb-1">你的反馈草稿会实时出现在这里</p>
-                <p class="text-sm">填写左侧内容后点击“生成反馈”</p>
+                <p class="text-sm">填写左侧内容后点击"生成反馈"</p>
+              </div>
+            </div>
+            <!-- Change 7: Loading Skeleton -->
+            <div id="loadingSkeleton" class="hidden">
+              <div class="skeleton-container">
+                <div class="skeleton-message">
+                  <span class="skeleton-spinner"></span>
+                  <span>AI is generating your feedback...</span>
+                </div>
+                <div class="skeleton-line long"></div>
+                <div class="skeleton-line medium"></div>
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line long"></div>
+                <div class="skeleton-line medium"></div>
+                <div class="skeleton-line long"></div>
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line medium"></div>
               </div>
             </div>
             <div id="feedbackContent" class="hidden">
@@ -494,7 +579,7 @@
       </div>
     </div>
     <div id="assistantMessages" class="assistant-msgs custom-scrollbar">
-      <div class="assistant-bubble assistant-ai">这里可以问批改时拿不准的问题，例如：这道题更适合判“语法错误”还是“语义偏差”？</div>
+      <div class="assistant-bubble assistant-ai">这里可以问批改时拿不准的问题，例如：这道题更适合判"语法错误"还是"语义偏差"？</div>
     </div>
     <div class="p-3 border-t border-black/10">
       <textarea id="assistantInput" rows="3" class="input-solid resize-none" placeholder="输入你的问题，Enter发送，Shift+Enter换行"></textarea>
@@ -517,660 +602,11 @@
           </button>
           <button id="assistantAskBtn" type="button" class="px-3 py-2 rounded-xl text-sm font-semibold text-white bg-slate hover:brightness-110 transition">提问</button>
         </div>
+        <div class="assistant-resize-handle" id="assistantResizeHandle" title="拖拽调整大小"></div>
       </div>
     </div>
   </div>
 
-  <script>
-    const state = { isGenerating:false, fullContent:"", greetingContent:"", viewMode:"rendered", assistantLoading:false, assistantImages:[], recognition:null, recognizing:false, readAloudEnabled:false, assistantWebSearchEnabled:false, assistantThinkingTimer:null, assistantThinkingNode:null, assistantThinkingStartedAt:0 };
-    const elements = {
-      studentName:document.getElementById("studentName"), unitNumber:document.getElementById("unitNumber"), lessonType:document.getElementById("lessonType"), lessonNumber:document.getElementById("lessonNumber"),
-      hasPreview:document.getElementById("hasPreview"), previewWrapper:document.getElementById("previewWrapper"), previewUnitNumber:document.getElementById("previewUnitNumber"), previewType:document.getElementById("previewType"),
-      feedbackType:document.getElementById("feedbackType"), greetingTime:document.getElementById("greetingTime"), rating:document.getElementById("rating"), lostSections:document.getElementById("lostSections"), lostSectionsWrapper:document.getElementById("lostSectionsWrapper"),
-      errorNotes:document.getElementById("errorNotes"), issues:document.querySelectorAll('input[name="issues"]'),
-      generateBtn:document.getElementById("generateBtn"), btnIcon:document.getElementById("btnIcon"), btnText:document.getElementById("btnText"),
-      greetingCard:document.getElementById("greetingCard"), greetingText:document.getElementById("greetingText"),
-      copyGreetingBtn:document.getElementById("copyGreetingBtn"), copyAllBtn:document.getElementById("copyAllBtn"), copyFeedbackBtn:document.getElementById("copyFeedbackBtn"),
-      emptyState:document.getElementById("emptyState"), markdownOutput:document.getElementById("markdownOutput"), toastContainer:document.getElementById("toastContainer"),
-      feedbackContent:document.getElementById("feedbackContent"), generateStatus:document.getElementById("generateStatus"),
-      viewModeBtn:document.getElementById("viewModeBtn"),
-      assistantFab:document.getElementById("assistantFab"), assistantPanel:document.getElementById("assistantPanel"), assistantCloseBtn:document.getElementById("assistantCloseBtn"),
-      assistantMessages:document.getElementById("assistantMessages"), assistantInput:document.getElementById("assistantInput"), assistantAskBtn:document.getElementById("assistantAskBtn"),
-      assistantImageInput:document.getElementById("assistantImageInput"), assistantImageBtn:document.getElementById("assistantImageBtn"), assistantImageTray:document.getElementById("assistantImageTray"),
-      assistantSearchBtn:document.getElementById("assistantSearchBtn"),
-      assistantVoiceBtn:document.getElementById("assistantVoiceBtn"), assistantReadAloudBtn:document.getElementById("assistantReadAloudBtn"),
-      generateModelLabel:document.getElementById("generateModelLabel"), assistantModelLabel:document.getElementById("assistantModelLabel")
-    };
-    const FORM_DRAFT_KEY = "gradify_form_draft_v4";
-    const DRAFT_FIELD_IDS = ["studentName","unitNumber","lessonType","lessonNumber","hasPreview","previewUnitNumber","previewType","greetingTime","rating","lostSections","errorNotes","previewErrorCount","quickTaskNumber","quickTaskPreset","quickTaskContent","quickReadingUnit","quickReadingType"];
-
-    function showToast(message, type="success"){
-      const toast=document.createElement("div");
-      const bgClass=type==="success"?"bg-cyan":"bg-coral";
-      toast.className=`${bgClass} text-white px-4 py-2 rounded-xl shadow-xl text-sm font-semibold`;
-      toast.textContent=message; elements.toastContainer.appendChild(toast); setTimeout(()=>toast.remove(),2200);
-    }
-    function showGenerateStatus(message, type="info"){
-      const map={info:"status-pill",success:"status-pill border-cyan/40 text-cyan-700",error:"status-pill border-coral/40 text-coral"};
-      elements.generateStatus.className=map[type]||map.info; elements.generateStatus.textContent=message; elements.generateStatus.classList.remove("hidden");
-    }
-    function setButtonLoading(loading){
-      state.isGenerating=loading; elements.generateBtn.disabled=loading;
-      if(loading){elements.btnIcon.innerHTML='<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" fill="none" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg>'; elements.btnText.textContent="AI 正在生成...";}
-      else {elements.btnIcon.innerHTML='<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M13 10V3L4 14h7v7l9-11h-7z"/>'; elements.btnText.textContent="生成反馈";}
-    }
-    function scrollToBottom(){const c=document.querySelector(".output-scroll"); c.scrollTop=c.scrollHeight;}
-    function syncViewModeButton(){elements.viewModeBtn.textContent = state.viewMode==="rendered" ? "Mode: Rendered" : "Mode: Raw";}
-    function preprocessMarkdownText(text){
-      const sanitized = text
-        .replace(/<\/?(u|ins|del)\b[^>]*>/gi,"")
-        .replace(/^\s*([*_]\s*){3,}\s*$/gm,(m)=>m.replace(/([*_])/g,"\\$1"))
-        .replace(/~~([^~]+)~~/g,"$1")
-        .replace(/__([^_]+)__/g,"$1")
-        .replace(/\n{2,}(?=(?:U\d+[AB]\s+Preview部分|Preview部分|Vocabulary部分|Reading部分|Task\d+\s.+部分|Task\s*6\s*判断题|听记作业|Reading Skill\s.+))/g,"\n");
-      const headingRe=/^(Vocabulary部分|Reading部分|Reading Skill\s.+|Task\d+\s.+部分|Task\s*6\s*判断题|Task\s*6\s*判断部分|听记作业|U\d+[AB]\s+Preview部分|Preview部分)$/i;
-      const issueHeadingRe=/^(Task\s*6\s*判断题|Task\s*6\s*判断部分|听记作业|U\d+[AB]\s+Preview部分|Preview部分|Vocabulary部分)$/i;
-      const lines=sanitized.split("\n");
-      let prevIsIssueHeading=false;
-      return lines.map((line)=>{
-        const t=line.trim();
-        if(!t){prevIsIssueHeading=false; return line;}
-        if(headingRe.test(t)){
-          prevIsIssueHeading = issueHeadingRe.test(t);
-          return `**${t}**`;
-        }
-        if(prevIsIssueHeading){
-          prevIsIssueHeading=false;
-          return `*${t}*`;
-        }
-        prevIsIssueHeading=false;
-        return line;
-      }).join("\n");
-    }
-    function applyEditorCommand(command, value=null){
-      elements.markdownOutput.focus();
-      const ok = value===null ? document.execCommand(command, false) : document.execCommand(command, false, value);
-      if(ok) return;
-      const sel = window.getSelection();
-      if(!sel || !sel.rangeCount || sel.isCollapsed) return;
-      const range = sel.getRangeAt(0);
-      const text = range.toString();
-      if(!text) return;
-      let node;
-      if(command==="bold") node=document.createElement("strong");
-      else if(command==="italic") node=document.createElement("em");
-      else node=document.createElement("mark");
-      if(command!=="bold" && command!=="italic"){
-        node.style.backgroundColor = "#fff59d";
-        node.style.padding = "0 .2em";
-        node.style.borderRadius = ".2em";
-      }
-      node.textContent = text;
-      range.deleteContents();
-      range.insertNode(node);
-      sel.removeAllRanges();
-    }
-    function unwrapElement(el){
-      if(!el || !el.parentNode) return;
-      const frag = document.createDocumentFragment();
-      while(el.firstChild) frag.appendChild(el.firstChild);
-      el.parentNode.replaceChild(frag, el);
-    }
-    function hasHighlightStyle(el){
-      if(!el || !el.style) return false;
-      const bg = (el.style.backgroundColor || "").trim().toLowerCase();
-      const bg2 = (el.style.background || "").trim().toLowerCase();
-      return Boolean(bg && bg !== "transparent") || (bg2.includes("rgb") || bg2.includes("#"));
-    }
-    function clearHighlightStyle(el){
-      if(!el || !el.style) return;
-      el.style.removeProperty("background-color");
-      el.style.removeProperty("background");
-      if(!el.getAttribute("style")) unwrapElement(el);
-    }
-    function getHighlightElementsInRange(range){
-      const root = elements.markdownOutput;
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-      const hits = [];
-      let node = walker.currentNode;
-      while(node){
-        if(range.intersectsNode(node)){
-          if(node.tagName==="MARK"){
-            hits.push(node);
-          }else if(hasHighlightStyle(node)){
-            hits.push(node);
-          }
-        }
-        node = walker.nextNode();
-      }
-      return hits;
-    }
-    function hasItalicStyle(el){
-      if(!el || !el.style) return false;
-      const fs = (el.style.fontStyle || "").trim().toLowerCase();
-      return fs === "italic";
-    }
-    function clearItalicStyle(el){
-      if(!el || !el.style) return;
-      el.style.removeProperty("font-style");
-      if(!el.getAttribute("style")) unwrapElement(el);
-    }
-    function getItalicElementsInRange(range){
-      const root = elements.markdownOutput;
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-      const hits = [];
-      let node = walker.currentNode;
-      while(node){
-        if(range.intersectsNode(node)){
-          if(node.tagName==="EM" || node.tagName==="I") hits.push(node);
-          else if(hasItalicStyle(node)) hits.push(node);
-        }
-        node = walker.nextNode();
-      }
-      return hits;
-    }
-    function toggleItalicSelection(){
-      elements.markdownOutput.focus();
-      const sel = window.getSelection();
-      if(!sel || !sel.rangeCount || sel.isCollapsed) return;
-      // 优先使用原生命令按“当前选区”切换，避免误伤整段。
-      const ok = document.execCommand("italic", false);
-      if(ok) return;
-      // 兜底：仅当选区两端在同一个斜体节点中时，才局部取消。
-      const anchorParent = sel.anchorNode && (sel.anchorNode.nodeType===1 ? sel.anchorNode : sel.anchorNode.parentElement);
-      const focusParent = sel.focusNode && (sel.focusNode.nodeType===1 ? sel.focusNode : sel.focusNode.parentElement);
-      const anchorItalic = anchorParent && anchorParent.closest ? anchorParent.closest("em,i") : null;
-      const focusItalic = focusParent && focusParent.closest ? focusParent.closest("em,i") : null;
-      if(anchorItalic && focusItalic && anchorItalic===focusItalic){
-        unwrapElement(anchorItalic);
-        return;
-      }
-      applyEditorCommand("italic");
-    }
-    function insertDivider(){
-      elements.markdownOutput.focus();
-      const inserted = document.execCommand("insertHorizontalRule", false);
-      if(inserted){
-        // Normalize browser default <hr> style so divider is always visible.
-        elements.markdownOutput.querySelectorAll("hr").forEach((hr)=>{
-          hr.style.border = "0";
-          hr.style.borderTop = "2px solid rgba(88,99,120,.45)";
-          hr.style.margin = ".18rem 0";
-          hr.style.height = "0";
-          hr.style.display = "block";
-        });
-        return;
-      }
-      const sel = window.getSelection();
-      if(!sel || !sel.rangeCount) return;
-      const range = sel.getRangeAt(0);
-      const hr = document.createElement("hr");
-      hr.style.border = "0";
-      hr.style.borderTop = "2px solid rgba(88,99,120,.45)";
-      hr.style.margin = ".18rem 0";
-      hr.style.height = "0";
-      hr.style.display = "block";
-      range.deleteContents();
-      range.insertNode(hr);
-      range.setStartAfter(hr);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-    function toggleHighlightSelection(){
-      elements.markdownOutput.focus();
-      const sel = window.getSelection();
-      if(!sel || !sel.rangeCount || sel.isCollapsed) return;
-      const range = sel.getRangeAt(0);
-      const highlighted = getHighlightElementsInRange(range);
-      if(highlighted.length){
-        // 仅对当前选区取消高亮，避免误伤整段/全部高亮。
-        applyEditorCommand("hiliteColor","transparent");
-        applyEditorCommand("backColor","transparent");
-        return;
-      }
-      applyEditorCommand("hiliteColor","#fff59d");
-      applyEditorCommand("backColor","#fff59d");
-    }
-    function renderFeedback(){
-      if(state.viewMode==="raw"){
-        elements.markdownOutput.textContent = state.fullContent;
-        return;
-      }
-      const source = preprocessMarkdownText(state.fullContent || "");
-      if(window.marked){
-        const renderer = new marked.Renderer();
-        elements.markdownOutput.innerHTML = marked.parse(source, { breaks:true, gfm:true, renderer });
-        const suspicious = elements.markdownOutput.querySelectorAll("u,ins,del");
-        suspicious.forEach((el)=>{
-          const frag = document.createDocumentFragment();
-          while(el.firstChild) frag.appendChild(el.firstChild);
-          el.replaceWith(frag);
-        });
-      }else{
-        elements.markdownOutput.textContent = state.fullContent;
-      }
-    }
-    function getCurrentFeedbackText(){
-      return (elements.markdownOutput.innerText || "").replace(/\n{3,}/g,"\n\n").trim();
-    }
-    function escapeHtml(text){
-      return String(text||"")
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/\"/g,"&quot;")
-        .replace(/'/g,"&#39;");
-    }
-    function getCurrentFeedbackHtml(){
-      const rich = (elements.markdownOutput.innerHTML||"").trim();
-      if(state.viewMode==="rendered" && rich){
-        const clone = elements.markdownOutput.cloneNode(true);
-        // Keep rich-text semantics (bold/italic/highlight/underline/divider) in clipboard.
-        return `<div style="white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;max-width:100%;">${clone.innerHTML}</div>`;
-      }
-      return `<div style="white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;max-width:100%;">${escapeHtml(getCurrentFeedbackText())}</div>`;
-    }
-    function handleLessonTypeChange(){elements.feedbackType.value=elements.lessonType.value==="Day"?"伴学手册反馈":"练习反馈";}
-    function updatePreviewCheckboxText(){
-      const a=document.getElementById("previewNotSubmitText"), b=document.getElementById("previewHasErrorText");
-      const u=elements.previewUnitNumber.value.trim(), t=elements.previewType.value;
-      if(u&&elements.hasPreview.checked){const full="U"+u+t; a.textContent=full+" Preview未交"; b.textContent=full+" Preview有错题";}
-      else {a.textContent="未交预习"; b.textContent="预习有错题";}
-    }
-    function handlePreviewChange(){elements.previewWrapper.classList.toggle("hidden",!elements.hasPreview.checked); updatePreviewCheckboxText();}
-    function updatePreviewErrorCountVisibility(){
-      const checked = Array.from(elements.issues).some(cb=>cb.value==="预习有错题" && cb.checked);
-      const wrap = document.getElementById("previewErrorCountWrap");
-      if(wrap) wrap.classList.toggle("hidden", !checked);
-    }
-    function handleRatingChange(){const ok=elements.rating.value==="A+"; elements.lostSections.disabled=ok; elements.lostSectionsWrapper.style.opacity=ok?"0.5":"1"; if(ok)elements.lostSections.value="";}
-    function saveFormDraft(){
-      const draft={}; DRAFT_FIELD_IDS.forEach(id=>{const el=document.getElementById(id); if(!el)return; draft[id]=el.type==="checkbox"?el.checked:el.value;});
-      draft.issues=Array.from(elements.issues).filter(cb=>cb.checked).map(cb=>cb.value); localStorage.setItem(FORM_DRAFT_KEY,JSON.stringify(draft));
-    }
-    function restoreFormDraft(){
-      const raw=localStorage.getItem(FORM_DRAFT_KEY); if(!raw)return;
-      try{const draft=JSON.parse(raw); DRAFT_FIELD_IDS.forEach(id=>{const el=document.getElementById(id); if(!el||!(id in draft))return; if(el.type==="checkbox")el.checked=Boolean(draft[id]); else el.value=(id==="greetingTime" && draft[id]==="中午下午") ? "中午" : draft[id];});
-        if(Array.isArray(draft.issues)){elements.issues.forEach(cb=>cb.checked=draft.issues.includes(cb.value));}
-      }catch{localStorage.removeItem(FORM_DRAFT_KEY);}
-    }
-    function setupDraftAutosave(){
-      DRAFT_FIELD_IDS.forEach(id=>{const el=document.getElementById(id); if(!el)return; const evt=el.tagName==="SELECT"||el.type==="checkbox"?"change":"input"; el.addEventListener(evt,saveFormDraft);});
-      elements.issues.forEach(cb=>cb.addEventListener("change",()=>{saveFormDraft(); updatePreviewErrorCountVisibility();}));
-    }
-    function setupErrorNotesCounter(){
-      const meta=document.createElement("div"); meta.className="field-meta"; elements.errorNotes.insertAdjacentElement("afterend",meta);
-      const refresh=()=>{const len=elements.errorNotes.value.trim().length; const hint=len>480?"long":len>220?"good":"short"; meta.textContent="Notes length: "+len+" ("+hint+")";};
-      elements.errorNotes.addEventListener("input",refresh); refresh();
-    }
-    async function copyToClipboard(text,msg){
-      if(!text)return;
-      try{await navigator.clipboard.writeText(text); showToast(msg);}
-      catch{const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); showToast(msg);}
-    }
-    async function copyRichToClipboard({html,text,msg}){
-      if(!text && !html) return;
-      try{
-        if(navigator.clipboard && window.ClipboardItem && navigator.clipboard.write){
-          const item = new ClipboardItem({
-            "text/html": new Blob([html||""], { type:"text/html" }),
-            "text/plain": new Blob([text||""], { type:"text/plain" })
-          });
-          await navigator.clipboard.write([item]);
-          showToast(msg);
-          return;
-        }
-      }catch{}
-      await copyToClipboard(text||"", msg);
-    }
-    function toggleAssistantPanel(forceOpen=null){
-      const shouldOpen = forceOpen===null ? elements.assistantPanel.classList.contains("hidden") : Boolean(forceOpen);
-      elements.assistantPanel.classList.toggle("hidden", !shouldOpen);
-      if(shouldOpen){elements.assistantInput.focus();}
-    }
-    function renderAssistantMarkdown(text){
-      if(!window.marked) return escapeHtml(text||"");
-      const renderer = new marked.Renderer();
-      renderer.hr = () => "";
-      const src = String(text||"")
-        .replace(/<\/?(u|hr|ins|del)\b[^>]*>/gi,"")
-        .replace(/~~([^~]+)~~/g,"$1");
-      return marked.parse(src, { breaks:true, gfm:true, renderer });
-    }
-    function appendAssistantMessage(role, text, images=[], options={}){
-      const bubble=document.createElement("div");
-      bubble.className=`assistant-bubble ${role==="user"?"assistant-user":"assistant-ai"}`;
-      if(text){
-        const textNode = document.createElement("div");
-        if(role==="assistant"){
-          textNode.className = "assistant-md";
-          textNode.innerHTML = renderAssistantMarkdown(text);
-        }else{
-          textNode.textContent = text;
-        }
-        bubble.appendChild(textNode);
-      }
-      if(Array.isArray(images) && images.length){
-        const imageGrid = document.createElement("div");
-        imageGrid.className = "assistant-inline-images";
-        images.forEach((src)=>{
-          const img = document.createElement("img");
-          img.src = src;
-          img.alt = "assistant-upload";
-          img.loading = "lazy";
-          imageGrid.appendChild(img);
-        });
-        bubble.appendChild(imageGrid);
-      }
-      if(options.usage && typeof options.usage.total_tokens === "number"){
-        const meta = document.createElement("div");
-        meta.className = "assistant-meta";
-        const p = options.usage.prompt_tokens ?? "-";
-        const c = options.usage.completion_tokens ?? "-";
-        const t = options.usage.total_tokens ?? "-";
-        const modelText = options.modelUsed ? `  Model: ${options.modelUsed}` : "";
-        meta.textContent = `Tokens  Prompt: ${p}  Completion: ${c}  Total: ${t}${modelText}`;
-        bubble.appendChild(meta);
-        const wsUsage = options.usage.web_search_usage;
-        if(wsUsage && typeof wsUsage === "object"){
-          const wsMeta = document.createElement("div");
-          wsMeta.className = "assistant-meta";
-          wsMeta.textContent = `Web Search  Tool Usage: ${wsUsage.tool_usage ?? "-"}  Page Usage: ${wsUsage.page_usage ?? "-"}`;
-          bubble.appendChild(wsMeta);
-        }
-      }
-      if(Array.isArray(options.citations) && options.citations.length){
-        const citeWrap = document.createElement("div");
-        citeWrap.className = "assistant-meta";
-        citeWrap.textContent = "Sources: ";
-        options.citations.slice(0,3).forEach((c, idx)=>{
-          if(!c || !c.url) return;
-          const a = document.createElement("a");
-          a.href = c.url;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          a.className = "underline mr-2";
-          a.textContent = c.site_name || c.title || `Source ${idx+1}`;
-          citeWrap.appendChild(a);
-        });
-        bubble.appendChild(citeWrap);
-      }
-      elements.assistantMessages.appendChild(bubble);
-      elements.assistantMessages.scrollTop=elements.assistantMessages.scrollHeight;
-    }
-    function startAssistantThinking(){
-      stopAssistantThinking();
-      state.assistantThinkingStartedAt = Date.now();
-      const node = document.createElement("div");
-      node.className = "assistant-bubble assistant-ai";
-      node.textContent = "助教正在思考中... 00:00";
-      elements.assistantMessages.appendChild(node);
-      elements.assistantMessages.scrollTop=elements.assistantMessages.scrollHeight;
-      state.assistantThinkingNode = node;
-      state.assistantThinkingTimer = setInterval(()=>{
-        if(!state.assistantThinkingNode) return;
-        const sec = Math.floor((Date.now()-state.assistantThinkingStartedAt)/1000);
-        const mm = String(Math.floor(sec/60)).padStart(2,"0");
-        const ss = String(sec%60).padStart(2,"0");
-        state.assistantThinkingNode.textContent = `助教正在思考中... ${mm}:${ss}`;
-      },1000);
-    }
-    function stopAssistantThinking(){
-      if(state.assistantThinkingTimer){ clearInterval(state.assistantThinkingTimer); state.assistantThinkingTimer = null; }
-      if(state.assistantThinkingNode){ state.assistantThinkingNode.remove(); state.assistantThinkingNode = null; }
-    }
-    function speakText(text){
-      if(!("speechSynthesis" in window)) return;
-      if(!state.readAloudEnabled) return;
-      const msg = new SpeechSynthesisUtterance(String(text||"").slice(0,800));
-      msg.lang = "zh-CN";
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(msg);
-    }
-    function refreshReadAloudButton(){
-      elements.assistantReadAloudBtn.classList.toggle("is-active", Boolean(state.readAloudEnabled));
-      elements.assistantReadAloudBtn.title = state.readAloudEnabled ? "语音播报已开启" : "语音播报已关闭";
-    }
-    function refreshSearchButton(){
-      elements.assistantSearchBtn.classList.toggle("is-active", Boolean(state.assistantWebSearchEnabled));
-      elements.assistantSearchBtn.title = state.assistantWebSearchEnabled ? "联网搜索已开启" : "联网搜索已关闭";
-    }
-    function renderAssistantImages(){
-      const tray = elements.assistantImageTray;
-      tray.innerHTML = "";
-      if(!state.assistantImages.length){ tray.classList.add("hidden"); return; }
-      tray.classList.remove("hidden");
-      state.assistantImages.forEach((item, idx)=>{
-        const card = document.createElement("div");
-        card.className = "relative";
-        card.innerHTML = `<img src="${item.url}" class="w-14 h-14 object-cover rounded-lg border border-black/10"><button data-idx="${idx}" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-black text-white text-[10px] leading-4">×</button>`;
-        tray.appendChild(card);
-      });
-      tray.querySelectorAll("button[data-idx]").forEach(btn=>{
-        btn.addEventListener("click",()=>{
-          const idx = Number(btn.getAttribute("data-idx"));
-          state.assistantImages.splice(idx,1);
-          renderAssistantImages();
-        });
-      });
-    }
-    function fileToDataUrl(file){
-      return new Promise((resolve,reject)=>{
-        const reader = new FileReader();
-        reader.onload = ()=>resolve(String(reader.result||""));
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-    async function addAssistantImage(file){
-      if(!file || !file.type.startsWith("image/")) return;
-      if(state.assistantImages.length>=3){showToast("最多添加3张图片","error"); return;}
-      const url = await fileToDataUrl(file);
-      state.assistantImages.push({url});
-      renderAssistantImages();
-    }
-    function initVoiceInput(){
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if(!SR){ elements.assistantVoiceBtn.disabled = true; elements.assistantVoiceBtn.title = "当前浏览器不支持语音输入"; return; }
-      state.recognition = new SR();
-      state.recognition.lang = "zh-CN";
-      state.recognition.interimResults = false;
-      state.recognition.maxAlternatives = 1;
-      state.recognition.onresult = (event)=>{
-        const text = event.results?.[0]?.[0]?.transcript || "";
-        if(!text) return;
-        elements.assistantInput.value = elements.assistantInput.value ? `${elements.assistantInput.value}\n${text}` : text;
-      };
-      state.recognition.onend = ()=>{
-        state.recognizing = false;
-        elements.assistantVoiceBtn.classList.remove("is-active");
-      };
-    }
-    async function askAssistant(){
-      if(state.assistantLoading) return;
-      const question = (elements.assistantInput.value||"").trim();
-      if(!question && !state.assistantImages.length){showToast("先输入问题或添加图片","error"); elements.assistantInput.focus(); return;}
-      const sentImages = state.assistantImages.map(x=>x.url);
-      appendAssistantMessage("user", question || "", sentImages);
-      elements.assistantInput.value="";
-      state.assistantLoading = true;
-      elements.assistantAskBtn.disabled = true;
-      elements.assistantAskBtn.textContent = "思考中...";
-      startAssistantThinking();
-      try{
-        const response = await fetch("/api/assistant/chat",{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({question, images:sentImages, web_search_enabled:state.assistantWebSearchEnabled})
-        });
-        const data = await response.json().catch(()=>({}));
-        if(!response.ok){
-          throw new Error(data.detail || `HTTP ${response.status}`);
-        }
-        const answer = data.answer || "助教暂时没有返回内容。";
-        appendAssistantMessage("assistant", answer, [], { usage:data.usage || null, modelUsed:data.model_used || "", citations:data.citations || [] });
-        speakText(answer);
-      }catch(error){
-        appendAssistantMessage("assistant", `抱歉，这次回答失败了：${error.message}`);
-      }finally{
-        stopAssistantThinking();
-        state.assistantImages = [];
-        renderAssistantImages();
-        state.assistantLoading = false;
-        elements.assistantAskBtn.disabled = false;
-        elements.assistantAskBtn.textContent = "提问";
-      }
-    }
-    async function loadModelLabels(){
-      const generateFallback = "mimo-v2-pro";
-      const assistantFallback = "mimo-v2-omni";
-      let generateModel = generateFallback;
-      let assistantModel = assistantFallback;
-      try{
-        const response = await fetch("/api/models");
-        if(response.ok){
-          const data = await response.json();
-          generateModel = data.generate_model || generateFallback;
-          assistantModel = data.assistant_model || assistantFallback;
-        }
-      }catch{}
-      elements.generateModelLabel.innerHTML = `<span class="model-dot"></span>Model: ${escapeHtml(generateModel)}`;
-      elements.assistantModelLabel.innerHTML = `<span class="model-dot"></span>Model: ${escapeHtml(assistantModel)}`;
-    }
-    async function generateFeedback(){
-      if(state.isGenerating)return;
-      if(!elements.studentName.value.trim()){showToast("请输入学生英文名","error"); elements.studentName.focus(); return;}
-      if(!elements.unitNumber.value.trim()){showToast("请输入单元号","error"); elements.unitNumber.focus(); return;}
-      let unitProgress=""; const unitNum=elements.unitNumber.value.trim(), lessonType=elements.lessonType.value, lessonNum=elements.lessonNumber.value;
-      if(lessonType==="Day"){unitProgress=`U${unitNum}Day${lessonNum}`; if(elements.hasPreview.checked&&elements.previewUnitNumber.value.trim()){const pType=elements.previewType.value, pUnit=elements.previewUnitNumber.value.trim(); unitProgress+=`&U${pUnit}${pType} Preview`;}}
-      else {unitProgress=`U${unitNum}${lessonType}${lessonNum}`;}
-      const previewErrorCountRaw = parseInt(document.getElementById("previewErrorCount").value,10);
-      const previewErrorCount = Number.isNaN(previewErrorCountRaw) ? 1 : Math.min(5, Math.max(1, previewErrorCountRaw));
-      const formData={student_name:elements.studentName.value.trim(),unit_progress:unitProgress,feedback_type:elements.feedbackType.value,greeting_time:elements.greetingTime.value,rating:elements.rating.value,lost_sections:elements.lostSections.value.trim(),error_notes:elements.errorNotes.value.trim(),preview_error_count:previewErrorCount,issues:Array.from(elements.issues).filter(cb=>cb.checked).map(cb=>cb.value)};
-      elements.greetingCard.classList.add("hidden"); elements.greetingText.textContent=""; state.greetingContent=""; state.fullContent="";
-      elements.emptyState.classList.add("hidden"); elements.markdownOutput.innerHTML=""; elements.feedbackContent.classList.remove("hidden");
-      elements.markdownOutput.contentEditable = "false";
-      elements.copyAllBtn.disabled=true; elements.copyGreetingBtn.disabled=true; elements.copyFeedbackBtn.disabled=true;
-      setButtonLoading(true); showGenerateStatus("正在连接生成服务...","info");
-      try{
-        const response=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(formData)}); if(!response.ok)throw new Error(`HTTP ${response.status}`);
-        const reader=response.body.getReader(), decoder=new TextDecoder();
-        while(true){
-          const {done,value}=await reader.read(); if(done)break;
-          const lines=decoder.decode(value).split("\n");
-          for(const line of lines){
-            if(!line.startsWith("data: "))continue;
-            try{
-              const data=JSON.parse(line.slice(6));
-              if(data.type==="greeting"){showGenerateStatus("问候语已生成，正在生成批改记录...","info"); state.greetingContent=data.content||""; elements.greetingText.textContent=state.greetingContent; elements.greetingCard.classList.remove("hidden"); elements.copyGreetingBtn.disabled=!state.greetingContent;}
-              else if(data.type==="header"){showGenerateStatus("模板生成完成，AI 正在扩写中...","info"); state.fullContent+=data.content||"";}
-              else if(data.type==="footer"){showGenerateStatus("正在添加备注信息...","info"); state.fullContent+=data.content||"";}
-              else if(data.type==="complete"||data.done){showGenerateStatus("生成完成","success"); elements.copyAllBtn.disabled=!(state.greetingContent||state.fullContent); elements.copyFeedbackBtn.disabled=!state.fullContent;}
-              else if(data.error){throw new Error(data.error);}
-              else if(data.content){showGenerateStatus("AI 正在生成解析...","info"); state.fullContent+=data.content;}
-              renderFeedback(); scrollToBottom();
-            }catch{}
-          }
-        }
-        showToast("反馈生成完成");
-        elements.markdownOutput.contentEditable = "true";
-      }catch(error){showGenerateStatus("生成失败: "+error.message,"error"); showToast("生成失败，请检查网络连接","error");}
-      finally{setButtonLoading(false); if(elements.markdownOutput.contentEditable!=="true"){elements.markdownOutput.contentEditable="true";}}
-    }
-    elements.lessonType.addEventListener("change",handleLessonTypeChange);
-    elements.hasPreview.addEventListener("change",handlePreviewChange);
-    elements.previewUnitNumber.addEventListener("input",updatePreviewCheckboxText);
-    elements.previewType.addEventListener("change",updatePreviewCheckboxText);
-    elements.rating.addEventListener("change",handleRatingChange);
-    elements.generateBtn.addEventListener("click",generateFeedback);
-    elements.copyAllBtn.addEventListener("click",async()=>{
-      const editedText=getCurrentFeedbackText(), editedHtml=getCurrentFeedbackHtml();
-      if(!state.greetingContent&&!editedText)return;
-      const greetingText = state.greetingContent ? `${state.greetingContent}\n\n` : "";
-      const greetingHtml = state.greetingContent ? `<p>${escapeHtml(state.greetingContent).replace(/\n/g,"<br>")}</p><p><br></p>` : "";
-      await copyRichToClipboard({
-        html:`${greetingHtml}${editedHtml}`,
-        text:`${greetingText}${editedText}`,
-        msg:"全部内容复制成功"
-      });
-    });
-    elements.copyGreetingBtn.addEventListener("click",()=>copyToClipboard(state.greetingContent,"问候语复制成功"));
-    elements.copyFeedbackBtn.addEventListener("click",()=>copyRichToClipboard({
-      html:getCurrentFeedbackHtml(),
-      text:getCurrentFeedbackText(),
-      msg:"反馈复制成功"
-    }));
-    elements.viewModeBtn.addEventListener("click",()=>{
-      state.fullContent = getCurrentFeedbackText();
-      state.viewMode = state.viewMode==="rendered" ? "raw" : "rendered";
-      syncViewModeButton();
-      renderFeedback();
-    });
-    document.getElementById("quickTaskPreset").addEventListener("change",(e)=>{
-      const v = e.target.value;
-      if(!v) return;
-      const input = document.getElementById("quickTaskContent");
-      input.value = v;
-      input.focus();
-      saveFormDraft();
-    });
-    document.getElementById("boldBtn").addEventListener("click",()=>applyEditorCommand("bold"));
-    document.getElementById("italicBtn").addEventListener("click",toggleItalicSelection);
-    document.getElementById("highlightBtn").addEventListener("click",toggleHighlightSelection);
-    document.getElementById("dividerBtn").addEventListener("click",insertDivider);
-    elements.markdownOutput.addEventListener("keydown",(e)=>{
-      if(e.key!=="Enter" || e.ctrlKey || e.metaKey || e.altKey) return;
-      e.preventDefault();
-      document.execCommand("insertLineBreak");
-    });
-    document.getElementById("copyTaskBtn").addEventListener("click",()=>{const n=document.getElementById("quickTaskNumber").value,c=document.getElementById("quickTaskContent").value.trim(); if(!c){showToast("请输入Task内容","error"); return;} copyRichToClipboard({html:`<strong>Task${n} ${escapeHtml(c)}部分</strong>`,text:`Task${n} ${c}部分`,msg:"Task内容复制成功"});});
-    document.getElementById("copyReadingBtn").addEventListener("click",()=>{const u=document.getElementById("quickReadingUnit").value.trim(); if(!u){showToast("请输入单元号","error"); return;} const t=document.getElementById("quickReadingType").value; copyRichToClipboard({html:`<strong>Reading Skill ${escapeHtml(u+t)}</strong>`,text:`Reading Skill ${u}${t}`,msg:"Reading Skill复制成功"});});
-    document.getElementById("copyVocabBtn").addEventListener("click",()=>copyRichToClipboard({html:"<strong>Vocabulary部分</strong>",text:"Vocabulary部分",msg:"Vocabulary部分复制成功"}));
-    document.getElementById("copyReadingPartBtn").addEventListener("click",()=>copyRichToClipboard({html:"<strong>Reading部分</strong>",text:"Reading部分",msg:"Reading部分复制成功"}));
-    elements.assistantFab.addEventListener("click",()=>toggleAssistantPanel());
-    elements.assistantCloseBtn.addEventListener("click",()=>toggleAssistantPanel(false));
-    elements.assistantAskBtn.addEventListener("click",askAssistant);
-    elements.assistantImageBtn.addEventListener("click",()=>elements.assistantImageInput.click());
-    elements.assistantImageInput.addEventListener("change",async(e)=>{
-      const files = Array.from(e.target.files||[]);
-      for(const f of files){await addAssistantImage(f);}
-      elements.assistantImageInput.value = "";
-    });
-    elements.assistantInput.addEventListener("paste",async(e)=>{
-      const items = Array.from(e.clipboardData?.items||[]);
-      const imageItems = items.filter(i=>i.type && i.type.startsWith("image/"));
-      if(!imageItems.length) return;
-      e.preventDefault();
-      for(const item of imageItems){
-        const file = item.getAsFile();
-        if(file) await addAssistantImage(file);
-      }
-    });
-    elements.assistantVoiceBtn.addEventListener("click",()=>{
-      if(!state.recognition){showToast("当前浏览器不支持语音输入","error"); return;}
-      if(state.recognizing){state.recognition.stop(); return;}
-      state.recognizing = true;
-      elements.assistantVoiceBtn.classList.add("is-active");
-      state.recognition.start();
-    });
-    elements.assistantReadAloudBtn.addEventListener("click",()=>{
-      state.readAloudEnabled = !state.readAloudEnabled;
-      refreshReadAloudButton();
-    });
-    elements.assistantSearchBtn.addEventListener("click",()=>{
-      state.assistantWebSearchEnabled = !state.assistantWebSearchEnabled;
-      refreshSearchButton();
-    });
-    elements.assistantInput.addEventListener("keydown",(e)=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault(); askAssistant();}});
-    document.addEventListener("keydown",(e)=>{
-      if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){
-        e.preventDefault();
-        if(document.activeElement===elements.assistantInput){askAssistant(); return;}
-        generateFeedback();
-      }
-    });
-    restoreFormDraft(); setupDraftAutosave(); setupErrorNotesCounter(); handleLessonTypeChange(); handlePreviewChange(); handleRatingChange(); updatePreviewCheckboxText(); updatePreviewErrorCountVisibility(); syncViewModeButton(); loadModelLabels(); initVoiceInput(); refreshReadAloudButton(); refreshSearchButton();
-  </script>
+  <script src="/static/app.js"></script>
 </body>
 </html>

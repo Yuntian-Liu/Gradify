@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.3] - 2026-04-03
+
+### Added
+- Added modular frontend architecture: JavaScript extracted from `index.html` into `static/app.js` with FastAPI static file serving.
+- Added XSS sanitization (`sanitizeHtml`) for clipboard operations and output rendering.
+- Added skeleton loading animation during AI feedback generation.
+- Added Error Notes character counter with 5-zone gradient color bar (brief/good/optimal/thorough/extreme, max 250 chars).
+- Added drag-to-resize handle for assistant panel with size persistence via localStorage.
+- Added Quick Phrases Task preset dropdown (造句/Vocabulary/Grammar/Match/Reading).
+
+### Improved
+- Improved initialization robustness with per-step error isolation in `initApp()`.
+- Improved Ctrl+Enter keyboard shortcut to only trigger within form and output areas.
+
+### Fixed
+- Fixed rich text bold toggle stacking (each click no longer adds nested wrappers).
+- Fixed highlight toggle not canceling existing highlights.
+- Fixed italic toggle clearing entire blocks instead of selected text.
+
 ## [3.0.2] - 2026-03-28
 
 ### Fixed
