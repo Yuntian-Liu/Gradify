@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-00a?logo=fastapi)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3.x-38b?logo=tailwind-css)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-V3.0.3-purple)
+![Version](https://img.shields.io/badge/Version-V3.1.0-purple)
 
 *A modern, elegant feedback generator for HOUHAI English teachers*
 
@@ -417,3 +417,31 @@ ASSISTANT_API_KEY=your-assistant-key
 - 优化：应用初始化增加逐步骤错误隔离（`initApp`），单个模块失败不影响整体加载。
 - 优化：`Ctrl+Enter` 快捷键作用域限定为表单区和输出区，避免在助教输入框误触生成。
 - 修复：富文本编辑加粗/斜体/高亮 Toggle 行为异常（恢复原生 `execCommand` 实现，不再嵌套/堆叠）。
+
+## v3.1.0 增补说明
+
+> 本节为 v3.1.0 的查漏补缺说明，仅增补，不替换原有文档内容。
+
+### 新增能力（v3.1.0）
+
+- 新增：开屏欢迎页（Splash Screen），含打字机标题动画、液态玻璃材质系统、Canvas 彩色鼠标拖尾粒子、自定义圆形光标（功能卡片区域放大镜效果）。
+- 新增：右侧功能卡片展示（Smart Error Analysis / Personalized Feedback / One-Click Export），品牌色左边框 + SVG 图标，入场动画交错编排。
+- 新增：CTA 启动按钮（图标→hover 展开文字），Sparkle 星光图标 + pulse 微闪动画 + hover 180° 旋转。
+- 新增：底部站点矩阵胶囊栏（Gradify Studio / Selfie / MyScore），含版权标识，hover 交互反馈。
+- 新增：双语描述块（英文 italic 主句 + 中文副句），品牌色渐变高亮词 + 玻璃衬底 + 渐变左边线装饰。
+- 新增：点击启动按钮时礼花粒子（Confetti）爆发动画，背景 scale + fade 平滑退出过渡。
+- 新增：背景装饰层（3 层 SVG 波浪、右侧双层圆弧、5 个漂浮几何体、15 颗闪烁星光）。
+- 新增：`prefers-reduced-motion` 无障碍支持，减弱动画模式下自动跳过所有动效。
+
+### 优化（v3.1.0）
+
+- 优化：标题字重 600（轻而大），DM Sans 字体，`clamp(72px,13vw,140px)` 响应式超大字号。
+- 优化：液态玻璃材质（`backdrop-filter: blur(20px) saturate(180%)` + 内部高光折射），替代毛玻璃。
+- 优化：动画编排紧凑化，打字机完成后 750ms 内全部元素就位，告别按部就班逐个出现的呆板感。
+- 优化：站点矩阵链接更新为正式域名（`gradify.ytunx.com` / `selfie.ytunx.com` / `myscore.ytunx.com`）。
+
+### 修复（v3.1.0）
+
+- 修复：复制到微信/钉钉等富文本目标后**加粗丢失** — 写入剪贴板前将语义标签（`<strong>`/`<em>`/`<mark>`）转换为内联样式（`style="font-weight:700"` 等），确保粘贴目标正确识别。
+- 修复：复制到微信/钉钉后**换行丢失、内容粘连** — 对 contentEditable 产生的 `<div>` 换行做 normalize 处理，转为明确的 `<br>` 标签。
+- 修复：复制按钮**频繁失灵**（点十余次无响应）— 复制前临时关闭 `contentEditable` 避免浏览器拦截剪贴板写入；空 `catch` 块改为 `console.warn` 记录失败原因；`execCommand("copy")` 降级路径检查返回值，失败时弹"复制失败"toast 而非静默吞错。
