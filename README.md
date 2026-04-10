@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-00a?logo=fastapi)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3.x-38b?logo=tailwind-css)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-V3.1.0-purple)
+![Version](https://img.shields.io/badge/Version-V3.2.0-purple)
 
 *A modern, elegant feedback generator for HOUHAI English teachers*
 
@@ -445,3 +445,29 @@ ASSISTANT_API_KEY=your-assistant-key
 - 修复：复制到微信/钉钉等富文本目标后**加粗丢失** — 写入剪贴板前将语义标签（`<strong>`/`<em>`/`<mark>`）转换为内联样式（`style="font-weight:700"` 等），确保粘贴目标正确识别。
 - 修复：复制到微信/钉钉后**换行丢失、内容粘连** — 对 contentEditable 产生的 `<div>` 换行做 normalize 处理，转为明确的 `<br>` 标签。
 - 修复：复制按钮**频繁失灵**（点十余次无响应）— 复制前临时关闭 `contentEditable` 避免浏览器拦截剪贴板写入；空 `catch` 块改为 `console.warn` 记录失败原因；`execCommand("copy")` 降级路径检查返回值，失败时弹"复制失败"toast 而非静默吞错。
+
+## v3.2.0 增补说明
+
+> 本节为 v3.2.0 的查漏补缺说明，仅增补，不替换原有文档内容。
+
+### 新增能力（v3.2.0）
+
+- 新增：「缺作业页面」Issue Flag 支持自定义配置——勾选后展开配置面板，可选择 Task 编号（1-7）+ 题型预设（造句/Vocabulary/Grammar/Match/Reading/Writing）或自定义输入，替代原先硬编码的 Task6 判断题模板。
+- 新增：AI 调用统计信息展示（AI Status 卡片），包含 Prompt/Completion/Total Tokens、TTFT（首字用时）、总耗时、费用估算（¥ 精确到 8 位小数）。
+- 新增：Thinking Process 折叠展示——若模型返回思考过程（reasoning），可点击展开查看，默认收起。
+- 新增：生成过程中的「正在思考中」计时动画（跳动圆点 + 实时秒数），显示在加载骨架屏区域。
+- 新增：Prompt Tokens 预估指示器（Error Notes 输入框下方），表单变化时实时估算输入 token 数。
+- 新增：`/api/estimate-tokens` 轻量预估接口，纯文本计算不调用真实 API。
+- 新增：Quick Phrases Reading Skill 行标签（加粗显示 Reading Skill），提升 UX 可识别性。
+- 新增：`estimate_tokens()` 后端函数，中英文混合 token 估算（中文 1.5 tokens/字，英文 0.25 tokens/词）。
+
+### 优化（v3.2.0）
+
+- 优化：Markdown 渲染正则从硬编码 `Task6 判断题` 泛化为 `Task\d+\s+\S+`，支持任意 Task 编号 + 内容组合的标题加粗。
+- 优化：AI 流式调用统计采集重构——记录开始时间、首字时间、结束时间、reasoning 内容，tokens 不支持时自动降级为估算值。
+- 优化：右侧输出区域高度由 JS 动态计算（`fitOutputScroll()`），避免 CSS Grid 布局冲突。
+
+### 修复（v3.2.0）
+
+- 修复：右侧输出框底边框不显示——改用 JS 动态测量替代 CSS calc/flex 方案，精确控制 output-scroll 高度。
+- 修复：Quick Phrases 折叠/展开导致输出框高度异常——新增 details toggle 监听自动重算高度。

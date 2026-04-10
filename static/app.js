@@ -1,4 +1,4 @@
-    const state = { isGenerating:false, fullContent:"", greetingContent:"", viewMode:"rendered", assistantLoading:false, assistantImages:[], recognition:null, recognizing:false, readAloudEnabled:false, assistantWebSearchEnabled:false, assistantThinkingTimer:null, assistantThinkingNode:null, assistantThinkingStartedAt:0 };
+    const state = { isGenerating:false, fullContent:"", greetingContent:"", viewMode:"rendered", assistantLoading:false, assistantImages:[], recognition:null, recognizing:false, readAloudEnabled:false, assistantWebSearchEnabled:false, assistantThinkingTimer:null, assistantThinkingNode:null, assistantThinkingStartedAt:0, thinkingTimerInterval:null, thinkingTimerStart:0 };
     const elements = {
       studentName:document.getElementById("studentName"), unitNumber:document.getElementById("unitNumber"), lessonType:document.getElementById("lessonType"), lessonNumber:document.getElementById("lessonNumber"),
       hasPreview:document.getElementById("hasPreview"), previewWrapper:document.getElementById("previewWrapper"), previewUnitNumber:document.getElementById("previewUnitNumber"), previewType:document.getElementById("previewType"),
@@ -19,7 +19,7 @@
       loadingSkeleton:document.getElementById("loadingSkeleton")
     };
     const FORM_DRAFT_KEY = "gradify_form_draft_v4";
-    const DRAFT_FIELD_IDS = ["studentName","unitNumber","lessonType","lessonNumber","hasPreview","previewUnitNumber","previewType","greetingTime","rating","lostSections","errorNotes","previewErrorCount","quickTaskNumber","quickTaskPreset","quickTaskContent","quickReadingUnit","quickReadingType"];
+    const DRAFT_FIELD_IDS = ["studentName","unitNumber","lessonType","lessonNumber","hasPreview","previewUnitNumber","previewType","greetingTime","rating","lostSections","errorNotes","previewErrorCount","quickTaskNumber","quickTaskPreset","quickTaskContent","quickReadingUnit","quickReadingType","missingTaskNumber","missingTaskPreset","missingTaskContent"];
     let splashDismissed=false;
 
     function showToast(message, type="success"){
@@ -45,9 +45,9 @@
         .replace(/^\s*([*_]\s*){3,}\s*$/gm,(m)=>m.replace(/([*_])/g,"\\$1"))
         .replace(/~~([^~]+)~~/g,"$1")
         .replace(/__([^_]+)__/g,"$1")
-        .replace(/\n{2,}(?=(?:U\d+[AB]\s+Preview部分|Preview部分|Vocabulary部分|Reading部分|Task\d+\s.+部分|Task\s*6\s*判断题|听记作业|Reading Skill\s.+))/g,"\n");
-      const headingRe=/^(Vocabulary部分|Reading部分|Reading Skill\s.+|Task\d+\s.+部分|Task\s*6\s*判断题|Task\s*6\s*判断部分|听记作业|U\d+[AB]\s+Preview部分|Preview部分)$/i;
-      const issueHeadingRe=/^(Task\s*6\s*判断题|Task\s*6\s*判断部分|听记作业|U\d+[AB]\s+Preview部分|Preview部分|Vocabulary部分)$/i;
+        .replace(/\n{2,}(?=(?:U\d+[AB]\s+Preview部分|Preview部分|Vocabulary部分|Reading部分|Task\d+\s.+部分|Task\d+\s+\S+|听记作业|Reading Skill\s.+))/g,"\n");
+      const headingRe=/^(Vocabulary部分|Reading部分|Reading Skill\s.+|Task\d+\s.+部分|Task\d+\s+\S+|听记作业|U\d+[AB]\s+Preview部分|Preview部分)$/i;
+      const issueHeadingRe=/^(Task\d+\s+\S+|听记作业|U\d+[AB]\s+Preview部分|Preview部分|Vocabulary部分)$/i;
       const lines=sanitized.split("\n");
       let prevIsIssueHeading=false;
       return lines.map((line)=>{
@@ -557,9 +557,22 @@
       else {unitProgress=`U${unitNum}${lessonType}${lessonNum}`;}
       const previewErrorCountRaw=parseInt(document.getElementById("previewErrorCount").value,10);
       const previewErrorCount=Number.isNaN(previewErrorCountRaw)?1:Math.min(5,Math.max(1,previewErrorCountRaw));
-      const formData={student_name:elements.studentName.value.trim(),unit_progress:unitProgress,feedback_type:elements.feedbackType.value,greeting_time:elements.greetingTime.value,rating:elements.rating.value,lost_sections:elements.lostSections.value.trim(),error_notes:elements.errorNotes.value.trim(),preview_error_count:previewErrorCount,issues:Array.from(elements.issues).filter(cb=>cb.checked).map(cb=>cb.value)};
+      const formData={student_name:elements.studentName.value.trim(),unit_progress:unitProgress,feedback_type:elements.feedbackType.value,greeting_time:elements.greetingTime.value,rating:elements.rating.value,lost_sections:elements.lostSections.value.trim(),error_notes:elements.errorNotes.value.trim(),preview_error_count:previewErrorCount,issues:Array.from(elements.issues).filter(cb=>cb.checked).map(cb => { if(cb.value==="缺作业页面"){const n=document.getElementById("missingTaskNumber").value,c=document.getElementById("missingTaskContent").value.trim()||"判断题部分"; return `缺作业页面:${n}:${c}`;} return cb.value; })};
       elements.greetingCard.classList.add("hidden"); elements.greetingText.textContent=""; state.greetingContent=""; state.fullContent="";
       elements.emptyState.classList.add("hidden"); elements.feedbackContent.classList.add("hidden"); elements.loadingSkeleton.classList.remove("hidden"); elements.markdownOutput.innerHTML="";
+      // 重置 AI 统计卡片 + 启动思考计时器（计时器在 loadingSkeleton 内）
+      const statsCard=document.getElementById("aiStatsCard");
+      if(statsCard)statsCard.classList.add("hidden");
+      ["statPromptTokens","statCompletionTokens","statTotalTokens","statTtft","statTotalTime","statCostValue"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="--";});
+      const rw=document.getElementById("statReasoningWrap");if(rw)rw.classList.add("hidden");
+      const rc=document.getElementById("statReasoningContent");if(rc)rc.textContent="";
+      // 启动思考计时（loadingSkeleton 已显示，计时器在其中）
+      if(state.thinkingTimerInterval)clearInterval(state.thinkingTimerInterval);
+      state.thinkingTimerStart=Date.now();
+      state.thinkingTimerInterval=setInterval(()=>{
+        const el=document.getElementById("thinkingElapsedTime");
+        if(el)el.textContent=((Date.now()-state.thinkingTimerStart)/1000).toFixed(1)+"s";
+      },100);
       elements.markdownOutput.contentEditable="false";
       elements.copyAllBtn.disabled=true; elements.copyGreetingBtn.disabled=true; elements.copyFeedbackBtn.disabled=true;
       setButtonLoading(true); showGenerateStatus("正在连接生成服务...","info");
@@ -576,7 +589,30 @@
               if(data.type==="greeting"){showGenerateStatus("问候语已生成，正在生成批改记录...","info"); state.greetingContent=data.content||""; elements.greetingText.textContent=state.greetingContent; elements.greetingCard.classList.remove("hidden"); elements.copyGreetingBtn.disabled=!state.greetingContent;}
               else if(data.type==="header"){showGenerateStatus("模板生成完成，AI 正在扩写中...","info"); state.fullContent+=data.content||"";}
               else if(data.type==="footer"){showGenerateStatus("正在添加备注信息...","info"); state.fullContent+=data.content||"";}
-              else if(data.type==="complete"||data.done){showGenerateStatus("生成完成","success"); elements.copyAllBtn.disabled=!(state.greetingContent||state.fullContent); elements.copyFeedbackBtn.disabled=!state.fullContent;}
+              else if(data.type==="stats"){
+                // 停止思考计时器，显示完整指标
+                if(state.thinkingTimerInterval){clearInterval(state.thinkingTimerInterval);state.thinkingTimerInterval=null;}
+                const sc=document.getElementById("aiStatsCard"),sd=data.data;
+                if(sc)sc.classList.remove("hidden");
+                const fmt=(v)=>v!=null?v:"--";
+                const pt=document.getElementById("statPromptTokens"),ct=document.getElementById("statCompletionTokens"),tt=document.getElementById("statTotalTokens");
+                if(pt)pt.textContent=fmt(sd.prompt_tokens);if(ct)ct.textContent=fmt(sd.completion_tokens);if(tt)tt.textContent=fmt(sd.total_tokens);
+                const ttf=document.getElementById("statTtft"),tot=document.getElementById("statTotalTime");
+                if(ttf)ttf.textContent=sd.ttft_ms!=null?(sd.ttft_ms/1000).toFixed(1)+"s":"--";
+                if(tot)tot.textContent=sd.total_ms!=null?(sd.total_ms/1000).toFixed(1)+"s":"--";
+                if(sd.reasoning){const rw=document.getElementById("statReasoningWrap"),rc=document.getElementById("statReasoningContent");if(rw)rw.classList.remove("hidden");if(rc)rc.textContent=sd.reasoning;}
+                // 费用估算：输入 ¥7/1M + 输出 ¥21/1M
+                const costEl=document.getElementById("statCostValue");
+                if(costEl&&sd.prompt_tokens!=null&&sd.completion_tokens!=null){
+                  const cost=(sd.prompt_tokens/1e6*7)+(sd.completion_tokens/1e6*21);
+                  costEl.textContent="¥"+cost.toFixed(8);
+                }
+                scrollToBottom();
+              }
+              else if(data.type==="complete"||data.done){
+                if(state.thinkingTimerInterval){clearInterval(state.thinkingTimerInterval);state.thinkingTimerInterval=null;}
+                showGenerateStatus("生成完成","success"); elements.copyAllBtn.disabled=!(state.greetingContent||state.fullContent); elements.copyFeedbackBtn.disabled=!state.fullContent;
+              }
               else if(data.error){throw new Error(data.error);}
               else if(data.content){showGenerateStatus("AI 正在生成解析...","info"); state.fullContent+=data.content;}
               renderFeedback(); scrollToBottom();
@@ -588,6 +624,7 @@
         showToast("反馈生成完成");
         elements.markdownOutput.contentEditable="true";
       }catch(error){
+        if(state.thinkingTimerInterval){clearInterval(state.thinkingTimerInterval);state.thinkingTimerInterval=null;}
         elements.loadingSkeleton.classList.add("hidden");
         elements.emptyState.classList.remove("hidden");
         showGenerateStatus("生成失败: "+error.message,"error"); showToast("生成失败，请检查网络连接","error");}
@@ -627,6 +664,26 @@
       if(!v) return;
       const input=document.getElementById("quickTaskContent");
       input.value=v; input.focus(); saveFormDraft();
+    });
+    // 缺作业页面自定义面板
+    document.querySelectorAll('input[name="issues"]').forEach(cb => {
+      if (cb.value === "缺作业页面") {
+        cb.addEventListener("change", () => {
+          document.getElementById("missingPageConfig").classList.toggle("hidden", !cb.checked);
+        });
+      }
+    });
+    document.getElementById("missingTaskPreset").addEventListener("change", (e) => {
+      const v = e.target.value;
+      if (!v) return;
+      const input = document.getElementById("missingTaskContent");
+      input.value = v + "部分";
+      input.focus();
+      saveFormDraft();
+    });
+    // Thinking Process 展开/收起图标旋转
+    document.querySelectorAll(".ai-reasoning-summary").forEach(sum=>{
+      sum.addEventListener("toggle",()=>{sum.classList.toggle("expanded",sum.open);});
     });
     document.getElementById("boldBtn").addEventListener("click",()=>applyEditorCommand("bold"));
     document.getElementById("italicBtn").addEventListener("click",toggleItalicSelection);
@@ -698,9 +755,54 @@
       }
     });
 
+    // ===== Token 预估（防抖） =====
+    let estimateDebounce=null;
+    function updateTokenEstimate(){
+      clearTimeout(estimateDebounce);
+      estimateDebounce=setTimeout(async()=>{
+        try{
+          const unitNum=elements.unitNumber.value.trim(),lessonType=elements.lessonType.value,lessonNum=elements.lessonNumber.value;
+          let unitProgress="";
+          if(lessonType==="Day"){unitProgress=`U${unitNum}Day${lessonNum}`; if(elements.hasPreview.checked&&elements.previewUnitNumber.value.trim()){const pType=elements.previewType.value,pUnit=elements.previewUnitNumber.value.trim(); unitProgress+=`&U${pUnit}${pType} Preview`;}}
+          else{unitProgress=`U${unitNum}${lessonType}${lessonNum}`;}
+          const issuesPayload=Array.from(elements.issues).filter(cb=>cb.checked).map(cb => { if(cb.value==="缺作业页面"){const n=document.getElementById("missingTaskNumber").value,c=document.getElementById("missingTaskContent").value.trim()||"判断题部分"; return `缺作业页面:${n}:${c}`;} return cb.value; });
+          const payload={student_name:elements.studentName.value.trim(),unit_progress:unitProgress,feedback_type:elements.feedbackType.value,greeting_time:elements.greetingTime.value,rating:elements.rating.value,lost_sections:elements.lostSections.value.trim(),error_notes:elements.errorNotes.value.trim(),preview_error_count:1,issues:issuesPayload};
+          const res=await fetch("/api/estimate-tokens",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+          const data=await res.json();
+          const el=document.getElementById("tokenEstimateValue");
+          if(el&&data.estimated_tokens!=null){el.textContent=data.estimated_tokens;el.classList.remove("stat-fade-in");void el.offsetWidth;el.classList.add("stat-fade-in");}
+        }catch{}
+      },350);
+    }
+    // 监听关键表单字段变化
+    ["studentName","unitNumber","lessonType","lessonNumber","feedbackType","greetingTime","rating","lostSections","errorNotes","hasPreview","previewUnitNumber","previewType"].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el)el.addEventListener(id==="hasPreview"?"change":"input",updateTokenEstimate);
+    });
+    document.querySelectorAll('input[name="issues"]').forEach(cb=>cb.addEventListener("change",updateTokenEstimate));
+    document.getElementById("missingTaskNumber")?.addEventListener("change",updateTokenEstimate);
+    document.getElementById("missingTaskPreset")?.addEventListener("change",updateTokenEstimate);
+    document.getElementById("missingTaskContent")?.addEventListener("input",updateTokenEstimate);
+    // 初始估算
+    updateTokenEstimate();
+
     // Validate DOM elements and log warnings
     const missingElements=Object.entries(elements).filter(([,el])=>el===null).map(([name])=>name);
     if(missingElements.length>0){ console.warn("[Gradify] Missing DOM elements:",missingElements.join(", ")); }
+
+    // ===== 动态计算 output-scroll 高度（修复边框） =====
+    function fitOutputScroll(){
+      const rp=document.querySelector(".right-panel");
+      const os=document.querySelector(".output-scroll");
+      if(!rp||!os)return;
+      const rh=document.querySelector(".right-head")?.offsetHeight||0;
+      const qt=document.querySelector(".quick-tools")?.offsetHeight||0;
+      const h=rp.offsetHeight-rh-qt;
+      os.style.height=Math.max(h,200)+"px";
+    }
+    window.addEventListener("resize",fitOutputScroll);
+    document.querySelector(".quick-tools")?.addEventListener("toggle",()=>setTimeout(fitOutputScroll,50));
+    fitOutputScroll();
 
     // ===== Splash Screen v5 =====
     function initSplash(){

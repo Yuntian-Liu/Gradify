@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.0] - 2026-04-10
+
+### Added
+- Added customizable "缺作业页面" Issue Flag: config panel with Task number (1-7) + preset dropdown (造句/Vocabulary/Grammar/Match/Reading/Writing) + custom text input, replacing hardcoded Task6 判断题 template.
+- Added AI Status card in output area showing Prompt/Completion/Total Tokens, TTFT, total time, and estimated cost (¥ with 8 decimal places).
+- Added collapsible Thinking Process section for model reasoning content (collapsed by default with expand icon).
+- Added "正在思考中" timer animation (bouncing dots + elapsed seconds) during AI generation.
+- Added Prompt Tokens estimate indicator below Error Notes textarea with real-time estimation on form changes.
+- Added `POST /api/estimate-tokens` endpoint for lightweight token estimation without real API call.
+- Added `estimate_tokens()` backend function for mixed Chinese/English token estimation.
+- Added bold "Reading Skill" label in Quick Phrases row for better UX clarity.
+
+### Improved
+- Generalized markdown heading regex from hardcoded `Task6 判断题` to `Task\d+\s+\S+` for any Task+content combination.
+- Refactored AI streaming statistics collection: start time, first-token time, end time, reasoning content, with fallback token estimation when API provider doesn't return usage.
+- Replaced CSS-based output-scroll height calculation with JS dynamic measurement (`fitOutputScroll()`) to avoid CSS Grid layout conflicts.
+
+### Fixed
+- Fixed right panel output-frame bottom border clipping by using JS height measurement instead of CSS flex/calc.
+- Fixed output height not adjusting when Quick Phrases is collapsed/expanded by adding details toggle listener.
+
 ## [3.0.3] - 2026-04-03
 
 ### Added

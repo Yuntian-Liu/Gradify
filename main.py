@@ -29,8 +29,8 @@ GREETING_TEMPLATES = {
         "上午好[太阳]这是孩子本次的练习反馈，辛苦查收[爱心]",
     ],
     "中午": [
-        "中午好🌞这是孩子本次的练习反馈，辛苦查收[玫瑰]",
-        "中午好🌞这是孩子本次的练习反馈，辛苦查收[爱心]",
+        "中午好[太阳]这是孩子本次的练习反馈，辛苦查收[玫瑰]",
+        "中午好[太阳]这是孩子本次的练习反馈，辛苦查收[爱心]",
     ],
     "下午": [
         "下午好[太阳]这是孩子本次的练习反馈，辛苦查收[爱心]",
@@ -54,7 +54,7 @@ RATING_TEMPLATES = {
         "收到宝贝的作业喽🐾~咱们这次作业完成非常棒哦👍！！！正确率百分之九十！ 「{lost_sections}」有一些小问题，我们一起看看吧⬇️：",
         "收到宝贝的作业啦😄~咱们这次作业完成啦🎉！正确率不错的💗~「{lost_sections}」部分各有一些问题，一起看看吧⬇️：",
         "收到宝贝的作业啦😄~咱们这次作业完成得很不错🎉！正确率蛮高的💗~只有「{lost_sections}」部分有一个小问题，一起看看吧⬇️：",
-        "收到宝贝的作业喽✌️~咱们这次作业完成非常棒哦👍！！！正确率百分之九十九！ 只有最后一个单词拼写上的小问题，需要注意一下拼写哦💗",
+        "收到宝贝的作业喽✌️~咱们这次作业完成非常棒哦👍！！！正确率百分之九十！ 在「{local_sections}」部分有一些小问题，一起看看吧⬇️：",
     ],
     "B": [
         "收到宝贝的作业啦😄~咱们这次作业完成啦🎉！正确率ok💗~「{lost_sections}」部分各有一些问题，一起看看吧⬇️：",
@@ -224,7 +224,15 @@ def build_footer(issues: list[str], unit_progress: str = "", preview_error_count
     preview_error_count = max(1, min(5, int(preview_error_count or 1)))
     parts = []
     for issue in issues:
-        if issue in ISSUE_TEMPLATES:
+        if issue.startswith("缺作业页面:"):
+            # 自定义格式: "缺作业页面:6:判断题部分"
+            parts_str = issue.split(":", 2)
+            task_num = parts_str[1] if len(parts_str) > 1 else "6"
+            task_content = parts_str[2] if len(parts_str) > 2 else "判断题部分"
+            body_name = task_content[:-2] if task_content.endswith("部分") else task_content
+            template = f"Task{task_num} {task_content}\n小朋友还缺一页{body_name}没有交，看一看是不是忘记啦~"
+            parts.append(template)
+        elif issue in ISSUE_TEMPLATES:
             # 随机选择模板
             template_list = ISSUE_TEMPLATES[issue]
             template = random.choice(template_list)
@@ -239,11 +247,19 @@ def build_footer(issues: list[str], unit_progress: str = "", preview_error_count
 
 
 async def stream_ai_content(error_notes: str) -> AsyncGenerator[str, None]:
-    """调用 OpenAI API 流式生成内容"""
+    """调用 OpenAI API 流式生成内容（含统计采集）"""
+    import time as _time
     try:
+        model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        start_time = _time.monotonic()
+        first_token_time = None
+        reasoning_parts = []
+        content_length = 0  # 用于 tokens 估算降级
+        usage_info = None
+
         print(f"[DEBUG] 开始生成AI内容，error_notes: {error_notes}")
         stream = await client.chat.completions.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            model=model_name,
             messages=[
                 {"role": "system", "content": AI_SYSTEM_PROMPT},
                 {"role": "user", "content": error_notes},
@@ -252,20 +268,103 @@ async def stream_ai_content(error_notes: str) -> AsyncGenerator[str, None]:
             temperature=0.7,
             max_tokens=10000,
         )
-        
+
         async for chunk in stream:
-            if chunk.choices and chunk.choices[0].delta.content:
-                content = chunk.choices[0].delta.content
-                print(f"[DEBUG] AI返回内容: {content[:50]}...")
-                yield f"data: {json.dumps({'content': content})}\n\n"
-        
+            delta = chunk.choices[0].delta if chunk.choices else None
+            if delta:
+                if delta.content:
+                    if first_token_time is None:
+                        first_token_time = _time.monotonic()
+                    content = delta.content
+                    content_length += len(content)
+                    print(f"[DEBUG] AI返回内容: {content[:50]}...")
+                    yield f"data: {json.dumps({'content': content})}\n\n"
+                # 部分模型（如 deepseek-r1）通过 reasoning_content 返回思考过程
+                if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
+                    reasoning_parts.append(delta.reasoning_content)
+            # 最后一个 chunk 通常携带 usage 信息
+            if hasattr(chunk, 'usage') and chunk.usage:
+                usage_info = {
+                    "prompt_tokens": getattr(chunk.usage, 'prompt_tokens', None),
+                    "completion_tokens": getattr(chunk.usage, 'completion_tokens', None),
+                    "total_tokens": getattr(chunk.usage, 'total_tokens', None),
+                }
+
+        end_time = _time.monotonic()
+        total_ms = round((end_time - start_time) * 1000)
+        ttft_ms = round((first_token_time - start_time) * 1000) if first_token_time else None
+
+        # 推送统计信息（tokens 降级：API 不返回时用估算值）
+        has_usage = usage_info and usage_info.get("total_tokens") is not None
+        est_prompt = estimate_tokens(AI_SYSTEM_PROMPT + "\n\n" + error_notes)
+        est_completion = max(1, content_length // 3) if content_length > 0 else 0
+        stats_data = {
+            "model": model_name,
+            "prompt_tokens": (usage_info.get("prompt_tokens") if has_usage else est_prompt),
+            "completion_tokens": (usage_info.get("completion_tokens") if has_usage else est_completion),
+            "total_tokens": (usage_info.get("total_tokens") if has_usage else (est_prompt + est_completion)),
+            "ttft_ms": ttft_ms,
+            "total_ms": total_ms,
+            "reasoning": "".join(reasoning_parts) if reasoning_parts else None,
+            "prompt_preview": error_notes[:80] + ("..." if len(error_notes) > 80 else ""),
+        }
+        yield f"data: {json.dumps({'type': 'stats', 'data': stats_data})}\n\n"
+
         # 发送结束标记
-        print(f"[DEBUG] AI生成完成")
+        print(f"[DEBUG] AI生成完成, 耗时{total_ms}ms, TTFT{ttft_ms}ms")
         yield f"data: {json.dumps({'done': True})}\n\n"
-        
+
     except Exception as e:
         print(f"[DEBUG] AI调用出错: {str(e)}")
         yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+
+def estimate_tokens(text: str) -> int:
+    """简单估算 token 数：中文约 1.5 tokens/字，英文约 0.25 tokens/词，标点约 1 token"""
+    if not text:
+        return 0
+    count = 0
+    # 按中英文分段估算
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if '\u4e00' <= ch <= '\u9fff':
+            # 中文汉字
+            count += 1.5
+        elif ch in '，。！？、；：""''（）【】《》…—～·':
+            count += 1
+        elif ch.isalpha():
+            # 英文单词
+            j = i
+            while j < len(text) and text[j].isalpha():
+                j += 1
+            word_len = j - i
+            count += max(1, word_len / 4)  # 约 4 字母 = 1 token
+            i = j - 1
+        elif ch.isdigit():
+            # 数字
+            j = i
+            while j < len(text) and text[j].isdigit():
+                j += 1
+            num_len = j - i
+            count += max(1, num_len / 3)
+            i = j - 1
+        elif ch in ' \t\n\r':
+            pass  # 空白不计
+        else:
+            count += 1
+        i += 1
+    return int(count) + 5  # +5 缓冲
+
+
+@app.post("/api/estimate-tokens")
+async def estimate_prompt_tokens(data: FeedbackRequest):
+    """预估输入 prompt 的 token 数（不调用真实 API）"""
+    header_text = build_header(data)
+    footer_text = build_footer(data.issues, data.unit_progress, data.preview_error_count)
+    full_prompt = AI_SYSTEM_PROMPT + "\n\n" + (header_text or "") + "\n" + (data.error_notes or "")
+    estimated = estimate_tokens(full_prompt)
+    return {"estimated_tokens": estimated}
 
 # ============================================================================
 # API 路由

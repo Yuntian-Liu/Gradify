@@ -81,7 +81,7 @@
     .matrix-mini-arrow{color:#52627a}
     .workspace{min-height:0;display:grid;grid-template-columns:1.1fr 1.35fr;gap:14px}
     .panel{min-height:0;border:1px solid var(--line);border-radius:22px;background:var(--panel);backdrop-filter:blur(9px);box-shadow:var(--soft);overflow:hidden}
-    .left-panel{display:grid;grid-template-rows:1fr auto auto}
+    .left-panel{display:grid;grid-template-rows:1fr auto auto;min-height:0;overflow:hidden}
     .panel-scroll{min-height:0;overflow:auto;padding:18px}
     .custom-scrollbar::-webkit-scrollbar{width:8px;height:8px}
     .custom-scrollbar::-webkit-scrollbar-thumb{background:rgba(0,0,0,.16);border-radius:20px}
@@ -104,7 +104,7 @@
     .btn-main:disabled{opacity:.6;cursor:not-allowed}
     .right-head{border-bottom:1px solid rgba(0,0,0,.08);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:linear-gradient(120deg,rgba(255,107,53,.06),rgba(46,196,182,.08))}
     .status-pill{font-size:12px;border:1px solid rgba(0,0,0,.1);border-radius:999px;padding:5px 10px;color:#254a46;background:rgba(255,255,255,.88)}
-    .output-scroll{min-height:0;height:calc(100% - 66px);overflow:auto;padding:14px}
+    .output-scroll{overflow:auto;padding:14px}
     .output-frame{min-height:100%;border-radius:18px;border:1px solid rgba(0,0,0,.09);background:#fff;padding:18px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
     .greeting-card{border:1px solid rgba(46,196,182,.35);background:linear-gradient(140deg,rgba(235,251,251,.9),rgba(255,255,255,.95));border-radius:14px;padding:12px;margin-bottom:12px;animation:fadeUp .28s ease}
     .markdown-content{line-height:1.9;white-space:pre-wrap;font-size:15px;color:#2d2d2d;overflow-wrap:anywhere;word-break:break-word;overflow-x:hidden}
@@ -553,6 +553,65 @@
       .splash-feat{transition:none!important}
       .splash-overlay.is-exiting{transition:opacity .15s ease,visibility .15s ease!important}
     }
+
+    /* ===== AI 统计信息样式 ===== */
+    #tokenEstimateWrap{
+      display:flex;align-items:center;justify-content:space-between;padding:8px 14px;margin-bottom:10px;
+      background:linear-gradient(135deg,rgba(46,196,182,.06),rgba(255,107,53,.04));
+      border:1px solid rgba(46,196,182,.15);border-radius:10px;
+    }
+    .token-pulse{width:7px;height:7px;border-radius:50%;background:#2ec4b6;animation:pulse-dot 2.2s ease-in-out infinite;flex-shrink:0;}
+    @keyframes pulse-dot{0%,100%{opacity:.35;transform:scale(.8);}50%{opacity:1;transform:scale(1.1);}}
+    .stat-fade-in{animation:stat-fade .3s ease;}
+    @keyframes stat-fade{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+
+    .ai-stats-card{
+      margin-top:16px;padding:14px 16px;border-radius:14px;
+      background:linear-gradient(145deg,#fafbff,#f0f7f6);
+      border:1px solid rgba(46,196,182,.18);
+      animation:fadeUp .35s ease;
+      position:sticky;bottom:0;z-index:1;
+    }
+    .ai-thinking-timer{
+      display:flex;align-items:center;gap:8px;
+      padding:8px 14px;margin-bottom:10px;border-radius:10px;
+      background:linear-gradient(135deg,rgba(46,196,182,.08),rgba(255,107,53,.05));
+      border:1px solid rgba(46,196,182,.15);font-size:12px;color:#5a7a75;font-weight:600;
+    }
+    .thinking-dots{display:inline-flex;gap:3px;}
+    .thinking-dots span{width:5px;height:5px;border-radius:50%;background:#2ec4b6;animation:dot-bounce 1.2s ease-in-out infinite;}
+    .thinking-dots span:nth-child(2){animation-delay:.15s;}
+    .thinking-dots span:nth-child(3){animation-delay:.3s;}
+    @keyframes dot-bounce{0%,100%{opacity:.3;transform:scale(.7);}50%{opacity:1;transform:scale(1);}}
+    .ai-stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+    .ai-stat-item{
+      display:flex;flex-direction:column;align-items:center;gap:3px;
+      padding:10px 4px;border-radius:12px;
+      background:rgba(255,255,255,.78);border:1px solid rgba(0,0,0,.05);
+    }
+    .ai-stat-label{
+      font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:#8898a8;font-weight:700;
+    }
+    .ai-stat-value{
+      font-size:17px;font-weight:800;color:#1a3c38;font-family:'Cascadia Code','Consolas','JetBrains Mono','Fira Code',monospace;
+      font-variant-numeric:tabular-nums;
+    }
+    .ai-reasoning-block{
+      margin-top:10px;border-radius:11px;border:1px dashed rgba(255,107,53,.25);
+      background:rgba(255,248,240,.55);
+    }
+    .ai-reasoning-summary{
+      cursor:pointer;padding:8px 13px;font-size:12px;font-weight:800;color:#c45a20;
+      display:flex;align-items:center;gap:6px;user-select:none;
+    }
+    .ai-reasoning-summary svg{transition:transform .2s ease;flex-shrink:0;}
+    .ai-reasoning-summary.expanded svg{transform:rotate(90deg);}
+    .ai-reasoning-summary::-webkit-details-marker{display:none;}
+    .ai-reasoning-text{
+      margin:0;padding:10px 13px;font-size:12.5px;line-height:1.68;color:#5a4030;
+      font-family:'Cascadia Code','Consolas','JetBrains Mono','Fira Code',monospace;
+      white-space:pre-wrap;max-height:220px;overflow-y:auto;border-top:1px dashed rgba(255,107,53,.15);
+    }
   </style>
 </head>
 <body class="grain">
@@ -841,6 +900,13 @@
                 <span id="generateModelLabel" class="model-chip"><span class="model-dot"></span>Model: Xiaomi-Mimo-V2-Pro</span>
               </div>
               <textarea id="errorNotes" rows="5" class="input-solid resize-none" placeholder="用简短短语记录错题，例如：&#10;Task3造句: 3.没懂what sports，选了颜色。6.主谓一致错&#10;阅读: 第2题细节题定位错误"></textarea>
+              <div id="tokenEstimateWrap" class="flex items-center justify-between px-3 py-2 mt-2">
+                <div class="flex items-center gap-2">
+                  <span class="token-pulse"></span>
+                  <span class="text-xs font-mono text-slate-500 tracking-wide">PROMPT TOKENS</span>
+                </div>
+                <span id="tokenEstimateValue" class="text-sm font-bold text-cyan-700 tabular-nums" style="font-family:'Cascadia Code','Consolas',monospace">--</span>
+              </div>
             </div>
 
           </form>
@@ -854,6 +920,27 @@
           <div class="grid grid-cols-2 gap-2 text-sm">
             <label class="issue-chip"><input type="checkbox" name="issues" value="未交预习" class="w-4 h-4"><span id="previewNotSubmitText">未交预习</span></label>
             <label class="issue-chip"><input type="checkbox" name="issues" value="缺作业页面" class="w-4 h-4"><span>缺作业页面</span></label>
+            <div id="missingPageConfig" class="hidden col-span-2 mt-1 mb-1 px-2 py-2 rounded-lg bg-white/60 border border-slate-200">
+              <div class="grid grid-cols-[auto_auto_1fr] gap-2 items-center text-sm">
+                <select id="missingTaskNumber" class="input-solid w-24">
+                  <option value="1">Task 1</option><option value="2">Task 2</option>
+                  <option value="3">Task 3</option>
+                  <option value="4">Task 4</option>
+                  <option value="5">Task 5</option>
+                  <option value="6" selected>Task 6</option><option value="7">Task 7</option>
+                </select>
+                <select id="missingTaskPreset" class="input-solid w-28">
+                  <option value="">常用预设</option>
+                  <option value="造句">造句</option>
+                  <option value="Vocabulary">Vocabulary</option>
+                  <option value="Grammar">Grammar</option>
+                  <option value="Match">Match</option>
+                  <option value="Reading">Reading</option>
+                  <option value="Writing">Writing</option>
+                </select>
+                <input id="missingTaskContent" class="input-solid" type="text" placeholder="或自定义输入" maxlength="20">
+              </div>
+            </div>
             <label class="issue-chip"><input type="checkbox" name="issues" value="判断不规范" class="w-4 h-4"><span>判断不规范</span></label>
             <label class="issue-chip"><input type="checkbox" name="issues" value="预习有错题" class="w-4 h-4"><span id="previewHasErrorText">预习有错题</span></label>
             <label class="issue-chip"><input type="checkbox" name="issues" value="单词拼写错误" class="w-4 h-4"><span>单词拼写错误</span></label>
@@ -909,9 +996,10 @@
             <input id="quickTaskContent" class="input-solid" type="text" placeholder="输入内容">
             <button id="copyTaskBtn" type="button" class="px-3 rounded-xl text-sm font-semibold text-white bg-coral hover:brightness-110 transition">复制</button>
           </div>
-          <div class="grid grid-cols-[auto_auto_1fr_auto] gap-2 mb-3">
-            <input id="quickReadingUnit" class="input-solid w-20 text-center" type="text" maxlength="2" placeholder="单元号">
-            <select id="quickReadingType" class="input-solid w-16"><option value="A">A</option><option value="B">B</option></select>
+          <div class="grid grid-cols-[auto_auto_auto_1fr_auto] gap-2 mb-3 items-center">
+            <span class="text-sm font-bold text-slate-700 whitespace-nowrap">Reading Skill</span>
+            <input id="quickReadingUnit" class="input-solid w-16 text-center" type="text" maxlength="2" placeholder="单元号">
+            <select id="quickReadingType" class="input-solid w-14"><option value="A">A</option><option value="B">B</option></select>
             <div></div>
             <button id="copyReadingBtn" type="button" class="px-3 py-2 rounded-xl text-sm font-semibold text-white bg-cyan hover:brightness-110 transition">复制</button>
           </div>
@@ -939,6 +1027,11 @@
             </div>
             <!-- Change 7: Loading Skeleton -->
             <div id="loadingSkeleton" class="hidden">
+              <div id="aiThinkingTimer" class="ai-thinking-timer">
+                <span class="thinking-dots"><span></span><span></span><span></span></span>
+                <span>正在思考中</span>
+                <span id="thinkingElapsedTime" class="font-mono text-cyan-700 font-bold ml-auto" style="font-family:'Cascadia Code','Consolas',monospace">0.0s</span>
+              </div>
               <div class="skeleton-container">
                 <div class="skeleton-message">
                   <span class="skeleton-spinner"></span>
@@ -967,6 +1060,25 @@
                 </div>
               </div>
               <div id="markdownOutput" class="markdown-content" contenteditable="true" spellcheck="false"></div>
+              <div id="aiStatsCard" class="hidden ai-stats-card">
+                <div class="ai-stats-grid">
+                  <div class="ai-stat-item"><span class="ai-stat-label">Prompt</span><span id="statPromptTokens" class="ai-stat-value">--</span></div>
+                  <div class="ai-stat-item"><span class="ai-stat-label">Completion</span><span id="statCompletionTokens" class="ai-stat-value">--</span></div>
+                  <div class="ai-stat-item"><span class="ai-stat-label">Total</span><span id="statTotalTokens" class="ai-stat-value">--</span></div>
+                  <div class="ai-stat-item"><span class="ai-stat-label">TTFT</span><span id="statTtft" class="ai-stat-value">--</span></div>
+                  <div class="ai-stat-item"><span class="ai-stat-label">总耗时</span><span id="statTotalTime" class="ai-stat-value">--</span></div>
+                </div>
+                <div id="aiCostLine" class="flex items-center justify-between px-2 pt-2 mt-1 text-xs text-slate-500">
+                  <span>Estimated Cost</span>
+                  <span id="statCostValue" class="font-mono font-semibold text-coral" style="font-family:'Cascadia Code','Consolas',monospace">--</span>
+                </div>
+                <div id="statReasoningWrap" class="hidden ai-reasoning-block">
+                  <details>
+                    <summary class="ai-reasoning-summary"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>Thinking Process</summary>
+                    <pre id="statReasoningContent" class="ai-reasoning-text"></pre>
+                  </details>
+                </div>
+              </div>
             </div>
           </div>
         </div>
