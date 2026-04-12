@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-00a?logo=fastapi)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3.x-38b?logo=tailwind-css)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-V3.3.1-purple)
+![Version](https://img.shields.io/badge/Version-V1.8.1-purple)
 
 *A modern, elegant feedback generator for HOUHAI English teachers*
 
@@ -162,7 +162,7 @@ Task3造句: 3.没懂what sports，选了颜色。6.主谓一致错
 - ☐ 单词拼写错误
 - ☐ 听记未交
 
-### 常用语快捷复制（V2.5 新增）
+### 常用语快捷复制（v1.3.0 新增）
 
 右侧展示区顶部提供常用语快捷复制功能：
 
@@ -344,11 +344,11 @@ Made with ❤️ for 少儿英语老师们
 
 ---
 
-## v3.0 增补说明
+## v1.4.0 增补说明
 
-> 本节为 v3.0 的查漏补缺说明，仅增补，不替换原有文档内容。
+> 本节为 v1.4.0 的查漏补缺说明，仅增补，不替换原有文档内容。
 
-### 新增能力（v3.0）
+### 新增能力（v1.4.0）
 
 - 新增：Tutor Assistant 助教对话窗（独立于生成解析流程）。
 - 新增：图片理解（支持上传图片与粘贴图片）。
@@ -359,7 +359,7 @@ Made with ❤️ for 少儿英语老师们
 - 新增：助教消息 Markdown 渲染。
 - 新增：富文本编辑能力（输出区手动加粗/高亮）。
 
-### 优化与修复（v3.0）
+### 优化与修复（v1.4.0）
 
 - 优化：整体 UI/UX 重构，顶部信息区、输出区、快捷区、弹窗层级统一。
 - 优化：版权与备案信息展示样式，增加 Open Source 入口图标化展示。
@@ -368,7 +368,7 @@ Made with ❤️ for 少儿英语老师们
 - 修复：图片请求兼容性问题（多格式兼容 + 非空内容保护）。
 - 修复：模型名大小写导致的模型调用失败问题（模型名规范化）。
 
-### 环境变量增补（v3.0）
+### 环境变量增补（v1.4.0）
 
 在原有 `.env` 基础上，建议补充以下变量：
 
@@ -389,7 +389,7 @@ ASSISTANT_BASE_URL=https://api.xiaomimimo.com/v1
 ASSISTANT_API_KEY=your-assistant-key
 ```
 
-### 联网搜索说明（v3.0）
+### 联网搜索说明（v1.4.0）
 
 - 助教对话窗可手动开启/关闭联网搜索。
 - 开启后后端会按 `tools: [{ type: "web_search", ... }]` 调用。
@@ -399,11 +399,11 @@ ASSISTANT_API_KEY=your-assistant-key
 
 - 详细版本历史请见 [CHANGELOG.md](CHANGELOG.md)
 
-## v3.0.3 增补说明
+## v1.5.0 增补说明
 
-> 本节为 v3.0.3 的查漏补缺说明，仅增补，不替换原有文档内容。
+> 本节为 v1.5.0 的查漏补缺说明，仅增补，不替换原有文档内容。
 
-### 新增能力（v3.0.3）
+### 新增能力（v1.5.0）
 
 - 新增：前端代码模块化，JavaScript 从 `index.html` 提取至 `static/app.js`，配合 FastAPI 静态文件服务。
 - 新增：XSS 防护（`sanitizeHtml`），剪贴板复制与输出渲染均过滤危险标签与事件属性。
@@ -412,17 +412,17 @@ ASSISTANT_API_KEY=your-assistant-key
 - 新增：助教面板拖拽调整大小，尺寸自动持久化到 localStorage。
 - 新增：Quick Phrases Task 预设下拉（造句 / Vocabulary / Grammar / Match / Reading）。
 
-### 优化与修复（v3.0.3）
+### 优化与修复（v1.5.0）
 
 - 优化：应用初始化增加逐步骤错误隔离（`initApp`），单个模块失败不影响整体加载。
 - 优化：`Ctrl+Enter` 快捷键作用域限定为表单区和输出区，避免在助教输入框误触生成。
 - 修复：富文本编辑加粗/斜体/高亮 Toggle 行为异常（恢复原生 `execCommand` 实现，不再嵌套/堆叠）。
 
-## v3.1.0 增补说明
+## v1.6.0 增补说明
 
-> 本节为 v3.1.0 的查漏补缺说明，仅增补，不替换原有文档内容。
+> 本节为 v1.6.0 的查漏补缺说明，仅增补，不替换原有文档内容。
 
-### 新增能力（v3.1.0）
+### 新增能力（v1.6.0）
 
 - 新增：开屏欢迎页（Splash Screen），含打字机标题动画、液态玻璃材质系统、Canvas 彩色鼠标拖尾粒子、自定义圆形光标（功能卡片区域放大镜效果）。
 - 新增：右侧功能卡片展示（Smart Error Analysis / Personalized Feedback / One-Click Export），品牌色左边框 + SVG 图标，入场动画交错编排。
@@ -433,39 +433,39 @@ ASSISTANT_API_KEY=your-assistant-key
 - 新增：背景装饰层（3 层 SVG 波浪、右侧双层圆弧、5 个漂浮几何体、15 颗闪烁星光）。
 - 新增：`prefers-reduced-motion` 无障碍支持，减弱动画模式下自动跳过所有动效。
 
-### 优化（v3.1.0）
+### 优化（v1.6.0）
 
 - 优化：标题字重 600（轻而大），DM Sans 字体，`clamp(72px,13vw,140px)` 响应式超大字号。
 - 优化：液态玻璃材质（`backdrop-filter: blur(20px) saturate(180%)` + 内部高光折射），替代毛玻璃。
 - 优化：动画编排紧凑化，打字机完成后 750ms 内全部元素就位，告别按部就班逐个出现的呆板感。
 - 优化：站点矩阵链接更新为正式域名（`gradify.ytunx.com` / `selfie.ytunx.com` / `myscore.ytunx.com`）。
 
-### 修复（v3.1.0）
+### 修复（v1.6.0）
 
 - 修复：复制到微信/钉钉等富文本目标后**加粗丢失** — 写入剪贴板前将语义标签（`<strong>`/`<em>`/`<mark>`）转换为内联样式（`style="font-weight:700"` 等），确保粘贴目标正确识别。
 - 修复：复制到微信/钉钉后**换行丢失、内容粘连** — 对 contentEditable 产生的 `<div>` 换行做 normalize 处理，转为明确的 `<br>` 标签。
 - 修复：复制按钮**频繁失灵**（点十余次无响应）— 复制前临时关闭 `contentEditable` 避免浏览器拦截剪贴板写入；空 `catch` 块改为 `console.warn` 记录失败原因；`execCommand("copy")` 降级路径检查返回值，失败时弹"复制失败"toast 而非静默吞错。
 
-## v3.3.1 增补说明
+## v1.8.0 增补说明
 
-> 本节为 v3.3.1 的查漏补缺说明，仅增补，不替换原有文档内容。
+> 本节为 v1.8.0 的查漏补缺说明，仅增补，不替换原有文档内容。
 
-### 新增能力（v3.3.1）
+### 新增能力（v1.8.0）
 - 新增：学生切换过期数据保护。生成反馈时，系统自动检测 Error Notes 和快捷用语（Issues）是否与上一位学生相同；如未更新，弹窗提醒具体哪项需要修改
 - 新增：Error Notes 区域快速清空按钮（有内容时自动显示）
 - 新增：过期数据黄色警告条，学生名变更后实时提示
 - 新增：Header 版本号胶囊徽章（液态玻璃效果 + JetBrains Mono 字体）
 
-### 修复（v3.3.1）
+### 修复（v1.8.0）
 - 修复：评级 A 模板 `{local_sections}` 拼写错误，约 16.7% 概率导致占位符泄漏到反馈内容中
 - 修复：Issue 标题下方斜体内容有时显示为原始星号，改用 HTML `<em>` 标签确保稳定渲染
 - 修复：清空按钮点击后颜色条和 Token 计数器未同步刷新
 
-## v3.2.0 增补说明
+## v1.7.0 增补说明
 
-> 本节为 v3.2.0 的查漏补缺说明，仅增补，不替换原有文档内容。
+> 本节为 v1.7.0 的查漏补缺说明，仅增补，不替换原有文档内容。
 
-### 新增能力（v3.2.0）
+### 新增能力（v1.7.0）
 
 - 新增：「缺作业页面」Issue Flag 支持自定义配置——勾选后展开配置面板，可选择 Task 编号（1-7）+ 题型预设（造句/Vocabulary/Grammar/Match/Reading/Writing）或自定义输入，替代原先硬编码的 Task6 判断题模板。
 - 新增：AI 调用统计信息展示（AI Status 卡片），包含 Prompt/Completion/Total Tokens、TTFT（首字用时）、总耗时、费用估算（¥ 精确到 8 位小数）。
@@ -476,13 +476,23 @@ ASSISTANT_API_KEY=your-assistant-key
 - 新增：Quick Phrases Reading Skill 行标签（加粗显示 Reading Skill），提升 UX 可识别性。
 - 新增：`estimate_tokens()` 后端函数，中英文混合 token 估算（中文 1.5 tokens/字，英文 0.25 tokens/词）。
 
-### 优化（v3.2.0）
+### 优化（v1.7.0）
 
 - 优化：Markdown 渲染正则从硬编码 `Task6 判断题` 泛化为 `Task\d+\s+\S+`，支持任意 Task 编号 + 内容组合的标题加粗。
 - 优化：AI 流式调用统计采集重构——记录开始时间、首字时间、结束时间、reasoning 内容，tokens 不支持时自动降级为估算值。
 - 优化：右侧输出区域高度由 JS 动态计算（`fitOutputScroll()`），避免 CSS Grid 布局冲突。
 
-### 修复（v3.2.0）
+### 修复（v1.7.0）
 
 - 修复：右侧输出框底边框不显示——改用 JS 动态测量替代 CSS calc/flex 方案，精确控制 output-scroll 高度。
 - 修复：Quick Phrases 折叠/展开导致输出框高度异常——新增 details toggle 监听自动重算高度。
+
+## v1.8.1 增补说明
+
+> 本节为 v1.8.1 的查漏补缺说明，仅增补，不替换原有文档内容。
+
+### 变更（v1.8.1）
+
+- 变更：全项目版本号规范化为语义化版本（SemVer），统一使用 1.x 系列编号。
+- 版本映射：V1.0→1.0.0, V1.5→1.1.0, V2.0→1.2.0, V2.5→1.3.0, V3.0→1.4.0, V3.0.1→1.4.1, V3.0.2→1.4.2, V3.0.3→1.5.0, V3.1.0→1.6.0, V3.2.0→1.7.0, V3.3.1→1.8.0。
+- 补充：CHANGELOG.md 新增 1.0.0–1.3.1 和 1.6.0 的历史版本记录。
