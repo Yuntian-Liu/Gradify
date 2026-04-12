@@ -8,7 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
@@ -48,6 +48,9 @@
       background:linear-gradient(150deg,rgba(255,255,255,.92),rgba(255,247,239,.92));box-shadow:0 8px 20px rgba(0,0,0,.06)
     }
     .meta-divider{width:1px;height:22px;background:rgba(0,0,0,.15)}
+    .version-tag{font-weight:700;color:#ff6b35;font-size:.75em;letter-spacing:.02em}
+    .version-chip{display:inline-flex;align-items:center;padding:1px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.04em;color:#3a3a3a;font-family:'JetBrains Mono','Cascadia Code','Consolas',monospace;background:linear-gradient(135deg,rgba(255,255,255,.5),rgba(255,255,255,.15));backdrop-filter:blur(12px) saturate(1.6);-webkit-backdrop-filter:blur(12px) saturate(1.6);border:1px solid rgba(255,255,255,.45);box-shadow:0 2px 8px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.5);white-space:nowrap;line-height:1.7;flex-shrink:0}
+    .version-date{font-size:.7em;color:#94a3b8}
     .gh-chip{
       display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:14px;border:1px solid rgba(0,0,0,.13);
       background:linear-gradient(150deg,#ffffff,#f2f4f8);font-weight:700;color:#1f2a3a;transition:transform .2s ease, box-shadow .2s ease
@@ -736,8 +739,11 @@
           </svg>
         </div>
         <div class="min-w-0">
-          <h1 class="text-xl font-bold leading-tight truncate">Gradify Studio</h1>
-          <p class="text-sm text-slate-600 truncate">English Homework Feedback Generator</p>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold leading-tight truncate">Gradify Studio</h1>
+            <span class="version-chip">V3.3.1</span>
+          </div>
+          <p class="text-sm text-slate-600 truncate">English Homework Feedback Generator · <span class="version-date">2026-04-12</span></p>
         </div>
       </div>
       <div class="hidden md:flex flex-col items-end gap-2 text-sm">
@@ -897,7 +903,10 @@
             <div class="section-card">
               <div class="flex items-center justify-between mb-2 gap-2">
                 <div class="section-title mb-0">Error Notes</div>
-                <span id="generateModelLabel" class="model-chip"><span class="model-dot"></span>Model: Xiaomi-Mimo-V2-Pro</span>
+                <div class="flex items-center gap-2">
+                  <button id="clearNotesBtn" type="button" class="px-2 py-0.5 rounded-lg border border-black/10 text-xs text-slate-500 hover:bg-black/5 hover:text-coral transition" style="display:none">清空</button>
+                  <span id="generateModelLabel" class="model-chip"><span class="model-dot"></span>Model: Xiaomi-Mimo-V2-Pro</span>
+                </div>
               </div>
               <textarea id="errorNotes" rows="5" class="input-solid resize-none" placeholder="用简短短语记录错题，例如：&#10;Task3造句: 3.没懂what sports，选了颜色。6.主谓一致错&#10;阅读: 第2题细节题定位错误"></textarea>
               <div id="tokenEstimateWrap" class="flex items-center justify-between px-3 py-2 mt-2">

@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.3.1] - 2026-04-12
+
+### Added
+- Student change stale data guard: detects when student name changes but Error Notes or Issue checkboxes remain unchanged from the previous generation, with a modal dialog showing which field(s) haven't been updated.
+- Amber warning banner below Error Notes textarea when stale data is detected.
+- Quick clear button next to Error Notes header (visible only when textarea has content).
+- Version chip badge (V3.3.1) with glassmorphism effect in header, JetBrains Mono font.
+
+### Fixed
+- Rating "A" template had a typo `{local_sections}` instead of `{lost_sections}`, causing raw placeholder to appear ~16.7% of the time.
+- Issue heading italic text rendered as raw asterisks in some cases; switched from `*text*` to `<em>` HTML tags for reliable rendering.
+- Clear button didn't sync the notes color bar and token estimate counters.
+
 ## [3.2.0] - 2026-04-10
 
 ### Added

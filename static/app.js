@@ -1,4 +1,4 @@
-    const state = { isGenerating:false, fullContent:"", greetingContent:"", viewMode:"rendered", assistantLoading:false, assistantImages:[], recognition:null, recognizing:false, readAloudEnabled:false, assistantWebSearchEnabled:false, assistantThinkingTimer:null, assistantThinkingNode:null, assistantThinkingStartedAt:0, thinkingTimerInterval:null, thinkingTimerStart:0 };
+    const state = { isGenerating:false, fullContent:"", greetingContent:"", viewMode:"rendered", assistantLoading:false, assistantImages:[], recognition:null, recognizing:false, readAloudEnabled:false, assistantWebSearchEnabled:false, assistantThinkingTimer:null, assistantThinkingNode:null, assistantThinkingStartedAt:0, thinkingTimerInterval:null, thinkingTimerStart:0, lastGeneratedStudentName:"", lastGeneratedErrorNotes:"", lastGeneratedIssues:[] };
     const elements = {
       studentName:document.getElementById("studentName"), unitNumber:document.getElementById("unitNumber"), lessonType:document.getElementById("lessonType"), lessonNumber:document.getElementById("lessonNumber"),
       hasPreview:document.getElementById("hasPreview"), previewWrapper:document.getElementById("previewWrapper"), previewUnitNumber:document.getElementById("previewUnitNumber"), previewType:document.getElementById("previewType"),
@@ -59,7 +59,7 @@
         }
         if(prevIsIssueHeading){
           prevIsIssueHeading=false;
-          return `*${t}*`;
+          return `<em>${t}</em>`;
         }
         prevIsIssueHeading=false;
         return line;
@@ -201,6 +201,42 @@
         .replace(/"/g,"&quot;")
         .replace(/'/g,"&#39;");
     }
+    function getStaleChecks(){
+      const curName=elements.studentName.value.trim();
+      if(!state.lastGeneratedStudentName || curName===state.lastGeneratedStudentName) return null;
+      const curNotes=elements.errorNotes.value.trim();
+      const curIssues=Array.from(elements.issues).filter(cb=>cb.checked).map(cb=>cb.value).sort();
+      const notesChanged=curNotes!==state.lastGeneratedErrorNotes;
+      const issuesChanged=JSON.stringify(curIssues)!==JSON.stringify(state.lastGeneratedIssues||[]);
+      if(notesChanged && issuesChanged) return null;
+      return {notesUnchanged:!notesChanged, issuesUnchanged:!issuesChanged};
+    }
+    function showStaleDataDialog(checks){
+      const items=[];
+      if(checks.notesUnchanged) items.push("Error Notes");
+      if(checks.issuesUnchanged) items.push("快捷用语（Issues）");
+      const hint=items.join(" 和 ")+"未更新，可能属于上一位学生";
+      return new Promise(resolve=>{
+        const overlay=document.createElement("div");
+        overlay.style.cssText="position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.35);display:grid;place-items:center;backdrop-filter:blur(3px)";
+        const dialog=document.createElement("div");
+        dialog.style.cssText="background:#fff;border-radius:18px;padding:28px 32px;max-width:400px;width:90%;box-shadow:0 24px 48px rgba(0,0,0,.18);text-align:center;font-family:inherit";
+        dialog.innerHTML=`
+          <div style="font-size:32px;margin-bottom:12px">&#9888;&#65039;</div>
+          <div style="font-weight:800;font-size:16px;margin-bottom:8px;color:#1a1a1a">学生姓名已变更</div>
+          <div style="font-size:14px;color:#5a5a5a;margin-bottom:24px;line-height:1.6">
+            ${escapeHtml(hint)}。
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center">
+            <button id="staleClearBtn" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:#fff;font-weight:700;cursor:pointer;font-size:14px">清空错题</button>
+            <button id="staleProceedBtn" style="flex:1;padding:10px;border-radius:12px;border:0;background:linear-gradient(130deg,#ff6b35,#2ec4b6);color:#fff;font-weight:700;cursor:pointer;font-size:14px">继续生成</button>
+          </div>`;
+        overlay.appendChild(dialog); document.body.appendChild(overlay);
+        document.getElementById("staleProceedBtn").addEventListener("click",()=>{overlay.remove();resolve(true);});
+        document.getElementById("staleClearBtn").addEventListener("click",()=>{elements.errorNotes.value="";saveFormDraft();overlay.remove();resolve(false);});
+        overlay.addEventListener("click",e=>{if(e.target===overlay){overlay.remove();resolve(false);}});
+      });
+    }
     function sanitizeHtml(html){
       if(!html || typeof html!=="string") return "";
       // Remove dangerous tags entirely
@@ -261,12 +297,15 @@
     function handleRatingChange(){const ok=elements.rating.value==="A+"; elements.lostSections.disabled=ok; elements.lostSectionsWrapper.style.opacity=ok?"0.5":"1"; if(ok)elements.lostSections.value="";}
     function saveFormDraft(){
       const draft={}; DRAFT_FIELD_IDS.forEach(id=>{const el=document.getElementById(id); if(!el)return; draft[id]=el.type==="checkbox"?el.checked:el.value;});
-      draft.issues=Array.from(elements.issues).filter(cb=>cb.checked).map(cb=>cb.value); localStorage.setItem(FORM_DRAFT_KEY,JSON.stringify(draft));
+      draft.issues=Array.from(elements.issues).filter(cb=>cb.checked).map(cb=>cb.value); draft.lastGeneratedStudentName=state.lastGeneratedStudentName; draft.lastGeneratedErrorNotes=state.lastGeneratedErrorNotes; draft.lastGeneratedIssues=state.lastGeneratedIssues; localStorage.setItem(FORM_DRAFT_KEY,JSON.stringify(draft));
     }
     function restoreFormDraft(){
       const raw=localStorage.getItem(FORM_DRAFT_KEY); if(!raw)return;
       try{const draft=JSON.parse(raw); DRAFT_FIELD_IDS.forEach(id=>{const el=document.getElementById(id); if(!el||!(id in draft))return; if(el.type==="checkbox")el.checked=Boolean(draft[id]); else el.value=(id==="greetingTime"&&draft[id]==="中午下午") ? "中午" : draft[id];});
         if(Array.isArray(draft.issues)){elements.issues.forEach(cb=>cb.checked=draft.issues.includes(cb.value));}
+        if("lastGeneratedStudentName" in draft) state.lastGeneratedStudentName=draft.lastGeneratedStudentName||"";
+        if("lastGeneratedErrorNotes" in draft) state.lastGeneratedErrorNotes=draft.lastGeneratedErrorNotes||"";
+        if("lastGeneratedIssues" in draft) state.lastGeneratedIssues=draft.lastGeneratedIssues||[];
       }catch{localStorage.removeItem(FORM_DRAFT_KEY);}
     }
     function setupDraftAutosave(){
@@ -312,6 +351,39 @@
       }
 
       elements.errorNotes.addEventListener("input", refresh);
+      refresh();
+    }
+    function setupStaleIndicator(){
+      const banner=document.createElement("div");
+      banner.id="staleNotesBanner";
+      banner.style.cssText="display:none;margin-top:8px;padding:6px 12px;border-radius:10px;background:linear-gradient(90deg,#fff7ed,#fef3c7);border:1px solid #fbbf24;font-size:12px;color:#92400e;font-weight:600;align-items:center;gap:8px";
+      banner.innerHTML='<span style="font-size:14px">&#9888;&#65039;</span> <span id="staleBannerText">部分内容未更新，可能属于上一位学生</span>';
+      const notesBar=elements.errorNotes.nextElementSibling;
+      if(notesBar) notesBar.parentNode.insertBefore(banner,notesBar);
+      function refresh(){
+        const checks=getStaleChecks();
+        if(!checks){banner.style.display="none"; return;}
+        const items=[];
+        if(checks.notesUnchanged) items.push("Error Notes");
+        if(checks.issuesUnchanged) items.push("快捷用语");
+        const textEl=document.getElementById("staleBannerText");
+        if(textEl) textEl.textContent=items.join(" 和 ")+"未更新，可能属于上一位学生";
+        banner.style.display="flex";
+      }
+      elements.studentName.addEventListener("input",refresh);
+      elements.errorNotes.addEventListener("input",refresh);
+      elements.issues.forEach(cb=>cb.addEventListener("change",refresh));
+    }
+    function setupClearNotesButton(){
+      const btn=document.getElementById("clearNotesBtn"); if(!btn) return;
+      function refresh(){btn.style.display=elements.errorNotes.value.trim().length>0?"inline-block":"none";}
+      elements.errorNotes.addEventListener("input",refresh);
+      btn.addEventListener("click",()=>{
+        elements.errorNotes.value=""; saveFormDraft(); refresh();
+        const banner=document.getElementById("staleNotesBanner"); if(banner) banner.style.display="none";
+        elements.errorNotes.dispatchEvent(new Event("input"));
+        elements.errorNotes.focus();
+      });
       refresh();
     }
     async function copyToClipboard(text,msg){
@@ -552,6 +624,12 @@
       }
       if(!elements.studentName.value.trim()){showToast("请输入学生英文名","error"); elements.studentName.focus(); return;}
       if(!elements.unitNumber.value.trim()){showToast("请输入单元号","error"); elements.unitNumber.focus(); return;}
+      // Stale data guard: detect student name change since last generation
+      {const staleChecks=getStaleChecks();
+       if(staleChecks){
+         const proceed=await showStaleDataDialog(staleChecks); if(!proceed) return;
+       }
+      }
       let unitProgress=""; const unitNum=elements.unitNumber.value.trim(), lessonType=elements.lessonType.value, lessonNum=elements.lessonNumber.value;
       if(lessonType==="Day"){unitProgress=`U${unitNum}Day${lessonNum}`; if(elements.hasPreview.checked&&elements.previewUnitNumber.value.trim()){const pType=elements.previewType.value, pUnit=elements.previewUnitNumber.value.trim(); unitProgress+=`&U${pUnit}${pType} Preview`;}}
       else {unitProgress=`U${unitNum}${lessonType}${lessonNum}`;}
@@ -611,6 +689,8 @@
               }
               else if(data.type==="complete"||data.done){
                 if(state.thinkingTimerInterval){clearInterval(state.thinkingTimerInterval);state.thinkingTimerInterval=null;}
+                state.lastGeneratedStudentName=elements.studentName.value.trim(); state.lastGeneratedErrorNotes=elements.errorNotes.value.trim(); state.lastGeneratedIssues=Array.from(elements.issues).filter(cb=>cb.checked).map(cb=>cb.value).sort(); saveFormDraft();
+                const staleBanner=document.getElementById("staleNotesBanner"); if(staleBanner) staleBanner.style.display="none";
                 showGenerateStatus("生成完成","success"); elements.copyAllBtn.disabled=!(state.greetingContent||state.fullContent); elements.copyFeedbackBtn.disabled=!state.fullContent;
               }
               else if(data.error){throw new Error(data.error);}
@@ -990,6 +1070,8 @@
         ["restoreFormDraft",restoreFormDraft],
         ["setupDraftAutosave",setupDraftAutosave],
         ["setupErrorNotesCounter",setupErrorNotesCounter],
+        ["setupStaleIndicator",setupStaleIndicator],
+        ["setupClearNotesButton",setupClearNotesButton],
         ["handleLessonTypeChange",handleLessonTypeChange],
         ["handlePreviewChange",handlePreviewChange],
         ["handleRatingChange",handleRatingChange],

@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-00a?logo=fastapi)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3.x-38b?logo=tailwind-css)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-V3.2.0-purple)
+![Version](https://img.shields.io/badge/Version-V3.3.1-purple)
 
 *A modern, elegant feedback generator for HOUHAI English teachers*
 
@@ -445,6 +445,21 @@ ASSISTANT_API_KEY=your-assistant-key
 - 修复：复制到微信/钉钉等富文本目标后**加粗丢失** — 写入剪贴板前将语义标签（`<strong>`/`<em>`/`<mark>`）转换为内联样式（`style="font-weight:700"` 等），确保粘贴目标正确识别。
 - 修复：复制到微信/钉钉后**换行丢失、内容粘连** — 对 contentEditable 产生的 `<div>` 换行做 normalize 处理，转为明确的 `<br>` 标签。
 - 修复：复制按钮**频繁失灵**（点十余次无响应）— 复制前临时关闭 `contentEditable` 避免浏览器拦截剪贴板写入；空 `catch` 块改为 `console.warn` 记录失败原因；`execCommand("copy")` 降级路径检查返回值，失败时弹"复制失败"toast 而非静默吞错。
+
+## v3.3.1 增补说明
+
+> 本节为 v3.3.1 的查漏补缺说明，仅增补，不替换原有文档内容。
+
+### 新增能力（v3.3.1）
+- 新增：学生切换过期数据保护。生成反馈时，系统自动检测 Error Notes 和快捷用语（Issues）是否与上一位学生相同；如未更新，弹窗提醒具体哪项需要修改
+- 新增：Error Notes 区域快速清空按钮（有内容时自动显示）
+- 新增：过期数据黄色警告条，学生名变更后实时提示
+- 新增：Header 版本号胶囊徽章（液态玻璃效果 + JetBrains Mono 字体）
+
+### 修复（v3.3.1）
+- 修复：评级 A 模板 `{local_sections}` 拼写错误，约 16.7% 概率导致占位符泄漏到反馈内容中
+- 修复：Issue 标题下方斜体内容有时显示为原始星号，改用 HTML `<em>` 标签确保稳定渲染
+- 修复：清空按钮点击后颜色条和 Token 计数器未同步刷新
 
 ## v3.2.0 增补说明
 
