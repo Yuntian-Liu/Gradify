@@ -5,9 +5,10 @@ FastAPI 后端服务
 
 import os
 import json
+import hashlib
 from typing import AsyncGenerator
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -130,6 +131,33 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# BUILD_ID：基于静态文件内容哈希，任何文件变动都会改变
+def compute_build_id() -> str:
+    files = ["index.html", "static/app.js", "static/styles.css"]
+    h = hashlib.sha256()
+    for f in files:
+        h.update(open(f, "rb").read())
+    return h.hexdigest()[:12]
+
+
+BUILD_ID = compute_build_id()
+_index_html = open("index.html", "r", encoding="utf-8").read()
+
+
+# 缓存头中间件
+@app.middleware("http")
+async def cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path == "/" or path == "/index.html":
+        response.headers["Cache-Control"] = "no-cache"
+    elif path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif path == "/logo.svg":
+        response.headers["Cache-Control"] = "public, max-age=86400"
+    return response
 
 # OpenAI 客户端
 client = AsyncOpenAI(
@@ -562,10 +590,17 @@ async def get_models():
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+@app.get("/api/build-info")
+async def build_info():
+    """返回当前构建信息，用于客户端版本检测"""
+    return {"version": "1.9.0", "build_id": BUILD_ID}
+
+
 @app.get("/")
 async def index():
-    """返回前端页面"""
-    return FileResponse("index.html")
+    """返回前端页面，注入 BUILD_ID"""
+    html = _index_html.replace("__BUILD_ID__", BUILD_ID)
+    return HTMLResponse(content=html, headers={"Cache-Control": "no-cache"})
 
 # ============================================================================
 # 启动入口

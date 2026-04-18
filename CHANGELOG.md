@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0] - 2026-04-18
+
+### Added
+- Website favicon (custom SVG icon) replacing the default browser globe icon.
+- Version log panel with expandable history, accessible from a floating button near the assistant dock.
+- Cache infrastructure: long-term caching for static assets (`Cache-Control: immutable`), `no-cache` for `index.html`, with BUILD_ID-based cache busting.
+- Automatic version update detection: background tabs silently reload, foreground tabs show an elegant glassmorphism update banner.
+- `/api/build-info` endpoint returning version and BUILD_ID for client-side polling.
+- BUILD_ID computed at server startup from file content hashes — changes only when files actually change.
+
+### Changed
+- Replaced Tailwind CSS Play CDN (~300 KB runtime JIT compiler) with a pre-built static CSS file (`styles.css`), reducing first-contentful-paint time by ~50%.
+- Added `preconnect` hint for `cdn.jsdelivr.net` to reduce DNS/TLS round-trips.
+- Changed `marked.min.js` to load with `defer` instead of blocking render.
+
 ## [1.8.2] - 2026-04-18
 
 ### Fixed

@@ -24,17 +24,17 @@
 
     function showToast(message, type="success"){
       const toast=document.createElement("div");
-      const bgClass=type==="success"?"bg-coral":"bg-coral";
-      toast.className=`${bgClass} text-white px-4 py-2 rounded-xl shadow-xl text-sm font-semibold`;
+      const bgClass=type==="success"?"tw-bg-coral":"tw-bg-coral";
+      toast.className=`${bgClass} tw-text-white tw-px-4 tw-py-2 tw-rounded-xl tw-shadow-xl tw-text-sm tw-font-semibold`;
       toast.textContent=message; elements.toastContainer.appendChild(toast); setTimeout(()=>toast.remove(),2200);
     }
     function showGenerateStatus(message, type="info"){
-      const map={info:"status-pill",success:"status-pill border-cyan/40 text-cyan-700",error:"status-pill border-coral/40 text-coral"};
-      elements.generateStatus.className=map[type]||map.info; elements.generateStatus.textContent=message; elements.generateStatus.classList.remove("hidden");
+      const map={info:"status-pill",success:"status-pill tw-border-cyan-40 tw-text-cyan-700",error:"status-pill tw-border-coral-40 tw-text-coral"};
+      elements.generateStatus.className=map[type]||map.info; elements.generateStatus.textContent=message; elements.generateStatus.classList.remove("tw-hidden");
     }
     function setButtonLoading(loading){
       state.isGenerating=loading; elements.generateBtn.disabled=loading;
-      if(loading){elements.btnIcon.innerHTML='<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" fill="none" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg>'; elements.btnText.textContent="AI 正在生成...";}
+      if(loading){elements.btnIcon.innerHTML='<svg class="tw-w-5 tw-h-5 tw-animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" fill="none" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg>'; elements.btnText.textContent="AI 正在生成...";}
       else {elements.btnIcon.innerHTML='<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M13 10V3L4 14h7v7l9-11h-7z"/>'; elements.btnText.textContent="生成反馈";}
     }
     function scrollToBottom(){const c=document.querySelector(".output-scroll"); c.scrollTop=c.scrollHeight;}
@@ -288,11 +288,11 @@
       if(u&&elements.hasPreview.checked){const full="U"+u+t; a.textContent=full+" Preview未交"; b.textContent=full+" Preview有错题";}
       else {a.textContent="未交预习"; b.textContent="预习有错题";}
     }
-    function handlePreviewChange(){elements.previewWrapper.classList.toggle("hidden",!elements.hasPreview.checked); updatePreviewCheckboxText();}
+    function handlePreviewChange(){elements.previewWrapper.classList.toggle("tw-hidden",!elements.hasPreview.checked); updatePreviewCheckboxText();}
     function updatePreviewErrorCountVisibility(){
       const checked = Array.from(elements.issues).some(cb=>cb.value==="预习有错题"&&cb.checked);
       const wrap = document.getElementById("previewErrorCountWrap");
-      if(wrap) wrap.classList.toggle("hidden", !checked);
+      if(wrap) wrap.classList.toggle("tw-hidden", !checked);
     }
     function handleRatingChange(){const ok=elements.rating.value==="A+"; elements.lostSections.disabled=ok; elements.lostSectionsWrapper.style.opacity=ok?"0.5":"1"; if(ok)elements.lostSections.value="";}
     function saveFormDraft(){
@@ -412,8 +412,8 @@
       await copyToClipboard(text||"", msg);
     }
     function toggleAssistantPanel(forceOpen=null){
-      const shouldOpen = forceOpen===null ? elements.assistantPanel.classList.contains("hidden") : Boolean(forceOpen);
-      elements.assistantPanel.classList.toggle("hidden", !shouldOpen);
+      const shouldOpen = forceOpen===null ? elements.assistantPanel.classList.contains("tw-hidden") : Boolean(forceOpen);
+      elements.assistantPanel.classList.toggle("tw-hidden", !shouldOpen);
       if(shouldOpen){elements.assistantInput.focus();}
     }
     function renderAssistantMarkdown(text){
@@ -473,7 +473,7 @@
           if(!c||!c.url) return;
           const a = document.createElement("a");
           a.href=c.url; a.target="_blank"; a.rel="noopener noreferrer";
-          a.className="underline mr-2";
+          a.className="tw-underline tw-mr-2";
           a.textContent=c.site_name||c.title||`Source ${idx+1}`;
           citeWrap.appendChild(a);
         });
@@ -522,12 +522,12 @@
     function renderAssistantImages(){
       const tray = elements.assistantImageTray;
       tray.innerHTML="";
-      if(!state.assistantImages.length){ tray.classList.add("hidden"); return; }
-      tray.classList.remove("hidden");
+      if(!state.assistantImages.length){ tray.classList.add("tw-hidden"); return; }
+      tray.classList.remove("tw-hidden");
       state.assistantImages.forEach((item,idx)=>{
         const card = document.createElement("div");
-        card.className="relative";
-        card.innerHTML=`<img src="${item.url}" class="w-14 h-14 object-cover rounded-lg border border-black/10"><button data-idx="${idx}" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-[10px] leading-4">×</button>`;
+        card.className="tw-relative";
+        card.innerHTML=`<img src="${item.url}" class="tw-w-14 tw-h-14 tw-object-cover tw-rounded-lg tw-border tw-border-black-10"><button data-idx="${idx}" class="tw-absolute tw--top-1 tw--right-1 tw-w-4 tw-h-4 tw-rounded-full tw-bg-white tw-text-10 tw-leading-4">×</button>`;
         tray.appendChild(card);
       });
       tray.querySelectorAll("button[data-idx]").forEach(btn=>{
@@ -636,13 +636,13 @@
       const previewErrorCountRaw=parseInt(document.getElementById("previewErrorCount").value,10);
       const previewErrorCount=Number.isNaN(previewErrorCountRaw)?1:Math.min(5,Math.max(1,previewErrorCountRaw));
       const formData={student_name:elements.studentName.value.trim(),unit_progress:unitProgress,feedback_type:elements.feedbackType.value,greeting_time:elements.greetingTime.value,rating:elements.rating.value,lost_sections:elements.lostSections.value.trim(),error_notes:elements.errorNotes.value.trim(),preview_error_count:previewErrorCount,issues:Array.from(elements.issues).filter(cb=>cb.checked).map(cb => { if(cb.value==="缺作业页面"){const n=document.getElementById("missingTaskNumber").value,c=document.getElementById("missingTaskContent").value.trim()||"判断题部分"; return `缺作业页面:${n}:${c}`;} return cb.value; })};
-      elements.greetingCard.classList.add("hidden"); elements.greetingText.textContent=""; state.greetingContent=""; state.fullContent="";
-      elements.emptyState.classList.add("hidden"); elements.feedbackContent.classList.add("hidden"); elements.loadingSkeleton.classList.remove("hidden"); elements.markdownOutput.innerHTML="";
+      elements.greetingCard.classList.add("tw-hidden"); elements.greetingText.textContent=""; state.greetingContent=""; state.fullContent="";
+      elements.emptyState.classList.add("tw-hidden"); elements.feedbackContent.classList.add("tw-hidden"); elements.loadingSkeleton.classList.remove("tw-hidden"); elements.markdownOutput.innerHTML="";
       // 重置 AI 统计卡片 + 启动思考计时器（计时器在 loadingSkeleton 内）
       const statsCard=document.getElementById("aiStatsCard");
-      if(statsCard)statsCard.classList.add("hidden");
+      if(statsCard)statsCard.classList.add("tw-hidden");
       ["statPromptTokens","statCompletionTokens","statTotalTokens","statTtft","statTotalTime","statCostValue"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="--";});
-      const rw=document.getElementById("statReasoningWrap");if(rw)rw.classList.add("hidden");
+      const rw=document.getElementById("statReasoningWrap");if(rw)rw.classList.add("tw-hidden");
       const rc=document.getElementById("statReasoningContent");if(rc)rc.textContent="";
       // 启动思考计时（loadingSkeleton 已显示，计时器在其中）
       if(state.thinkingTimerInterval)clearInterval(state.thinkingTimerInterval);
@@ -664,21 +664,21 @@
             if(!line.startsWith("data: "))continue;
             try{
               const data=JSON.parse(line.slice(6));
-              if(data.type==="greeting"){showGenerateStatus("问候语已生成，正在生成批改记录...","info"); state.greetingContent=data.content||""; elements.greetingText.textContent=state.greetingContent; elements.greetingCard.classList.remove("hidden"); elements.copyGreetingBtn.disabled=!state.greetingContent;}
+              if(data.type==="greeting"){showGenerateStatus("问候语已生成，正在生成批改记录...","info"); state.greetingContent=data.content||""; elements.greetingText.textContent=state.greetingContent; elements.greetingCard.classList.remove("tw-hidden"); elements.copyGreetingBtn.disabled=!state.greetingContent;}
               else if(data.type==="header"){showGenerateStatus("模板生成完成，AI 正在扩写中...","info"); state.fullContent+=data.content||"";}
               else if(data.type==="footer"){showGenerateStatus("正在添加备注信息...","info"); state.fullContent+=data.content||"";}
               else if(data.type==="stats"){
                 // 停止思考计时器，显示完整指标
                 if(state.thinkingTimerInterval){clearInterval(state.thinkingTimerInterval);state.thinkingTimerInterval=null;}
                 const sc=document.getElementById("aiStatsCard"),sd=data.data;
-                if(sc)sc.classList.remove("hidden");
+                if(sc)sc.classList.remove("tw-hidden");
                 const fmt=(v)=>v!=null?v:"--";
                 const pt=document.getElementById("statPromptTokens"),ct=document.getElementById("statCompletionTokens"),tt=document.getElementById("statTotalTokens");
                 if(pt)pt.textContent=fmt(sd.prompt_tokens);if(ct)ct.textContent=fmt(sd.completion_tokens);if(tt)tt.textContent=fmt(sd.total_tokens);
                 const ttf=document.getElementById("statTtft"),tot=document.getElementById("statTotalTime");
                 if(ttf)ttf.textContent=sd.ttft_ms!=null?(sd.ttft_ms/1000).toFixed(1)+"s":"--";
                 if(tot)tot.textContent=sd.total_ms!=null?(sd.total_ms/1000).toFixed(1)+"s":"--";
-                if(sd.reasoning){const rw=document.getElementById("statReasoningWrap"),rc=document.getElementById("statReasoningContent");if(rw)rw.classList.remove("hidden");if(rc)rc.textContent=sd.reasoning;}
+                if(sd.reasoning){const rw=document.getElementById("statReasoningWrap"),rc=document.getElementById("statReasoningContent");if(rw)rw.classList.remove("tw-hidden");if(rc)rc.textContent=sd.reasoning;}
                 // 费用估算：输入 ¥7/1M + 输出 ¥21/1M
                 const costEl=document.getElementById("statCostValue");
                 if(costEl&&sd.prompt_tokens!=null&&sd.completion_tokens!=null){
@@ -699,14 +699,14 @@
             }catch{}
           }
         }
-        elements.loadingSkeleton.classList.add("hidden");
-        elements.feedbackContent.classList.remove("hidden");
+        elements.loadingSkeleton.classList.add("tw-hidden");
+        elements.feedbackContent.classList.remove("tw-hidden");
         showToast("反馈生成完成");
         elements.markdownOutput.contentEditable="true";
       }catch(error){
         if(state.thinkingTimerInterval){clearInterval(state.thinkingTimerInterval);state.thinkingTimerInterval=null;}
-        elements.loadingSkeleton.classList.add("hidden");
-        elements.emptyState.classList.remove("hidden");
+        elements.loadingSkeleton.classList.add("tw-hidden");
+        elements.emptyState.classList.remove("tw-hidden");
         showGenerateStatus("生成失败: "+error.message,"error"); showToast("生成失败，请检查网络连接","error");}
       finally{setButtonLoading(false); if(elements.markdownOutput.contentEditable!=="true"){elements.markdownOutput.contentEditable="true";}}
     }
@@ -749,7 +749,7 @@
     document.querySelectorAll('input[name="issues"]').forEach(cb => {
       if (cb.value === "缺作业页面") {
         cb.addEventListener("change", () => {
-          document.getElementById("missingPageConfig").classList.toggle("hidden", !cb.checked);
+          document.getElementById("missingPageConfig").classList.toggle("tw-hidden", !cb.checked);
         });
       }
     });
@@ -1063,6 +1063,29 @@
     }
     function onSplashComplete(){}
 
+    // Changelog modal
+    function initChangelog(){
+      const overlay = document.getElementById("changelogOverlay");
+      const trigger = document.getElementById("changelogTrigger");
+      const closeBtn = document.getElementById("changelogClose");
+      const historyToggle = document.getElementById("clHistoryToggle");
+      const historyEl = document.getElementById("clHistory");
+      if(!overlay||!trigger) return;
+
+      function open(){ overlay.classList.add("open"); }
+      function close(){ overlay.classList.remove("open"); }
+      trigger.addEventListener("click", open);
+      closeBtn.addEventListener("click", close);
+      overlay.addEventListener("click", (e)=>{ if(e.target===overlay) close(); });
+      document.addEventListener("keydown", (e)=>{ if(e.key==="Escape" && overlay.classList.contains("open")) close(); });
+      if(historyToggle && historyEl){
+        historyToggle.addEventListener("click", ()=>{
+          historyEl.classList.toggle("show");
+          historyToggle.textContent = historyEl.classList.contains("show") ? "收起历史版本 ▴" : "查看历史版本 ▾";
+        });
+      }
+    }
+
     // Safe initialization with per-step error isolation
     function initApp(){
       const initSteps=[
@@ -1082,6 +1105,7 @@
         ["initVoiceInput",initVoiceInput],
         ["refreshReadAloudButton",refreshReadAloudButton],
         ["refreshSearchButton",refreshSearchButton],
+        ["initChangelog",initChangelog],
       ];
       for(const [name,fn] of initSteps){
         try{ fn(); }
@@ -1136,3 +1160,95 @@
     })();
 
     initApp();
+
+    // === 版本更新检测 ===
+    (function initUpdateCheck(){
+      const currentBuildId = document.documentElement.dataset.buildId;
+      if(!currentBuildId) return;
+
+      // 创建提示条样式（一次性注入）
+      if(!document.getElementById("update-banner-style")){
+        const style = document.createElement("style");
+        style.id = "update-banner-style";
+        style.textContent = `
+          .update-banner {
+            position: fixed; top: -60px; left: 50%; transform: translateX(-50%);
+            z-index: 99999; padding: 10px 22px; border-radius: 14px;
+            background: rgba(255,255,255,0.82); backdrop-filter: blur(16px) saturate(1.6);
+            -webkit-backdrop-filter: blur(16px) saturate(1.6);
+            border: 1px solid rgba(46,196,182,0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 0 0 1px rgba(255,255,255,0.3) inset;
+            display: flex; align-items: center; gap: 12px;
+            font-family: 'DM Sans', system-ui, sans-serif; font-size: 14px; color: #1a1a1a;
+            transition: top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer; user-select: none;
+          }
+          .update-banner.show { top: 20px; }
+          .update-banner-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+            background: linear-gradient(135deg, #2ec4b6, #ff6b35);
+            animation: update-pulse 1.6s ease-in-out infinite;
+          }
+          .update-banner-btn {
+            padding: 4px 14px; border-radius: 8px; border: none;
+            background: linear-gradient(135deg, #2ec4b6, #1fa89c);
+            color: #fff; font-weight: 600; font-size: 13px;
+            cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+          }
+          .update-banner-btn:hover {
+            transform: scale(1.05); box-shadow: 0 4px 12px rgba(46,196,182,0.35);
+          }
+          @keyframes update-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.8); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      let banner = null;
+      let checkTimer = null;
+
+      function showUpdateBanner(){
+        if(banner) return;
+        banner = document.createElement("div");
+        banner.className = "update-banner";
+        banner.innerHTML = `
+          <span class="update-banner-dot"></span>
+          <span>发现新版本，体验更优</span>
+          <button class="update-banner-btn">立即更新</button>
+        `;
+        banner.querySelector("button").addEventListener("click", (e) => {
+          e.stopPropagation();
+          location.reload();
+        });
+        banner.addEventListener("click", () => location.reload());
+        document.body.appendChild(banner);
+        requestAnimationFrame(() => requestAnimationFrame(() => banner.classList.add("show")));
+      }
+
+      async function checkForUpdate(){
+        try {
+          const res = await fetch("/api/build-info", { cache: "no-store" });
+          const data = await res.json();
+          if(data.build_id && data.build_id !== currentBuildId){
+            if(document.visibilityState === "visible"){
+              showUpdateBanner();
+            } else {
+              location.reload();
+            }
+          }
+        } catch(e) { /* 静默 */ }
+      }
+
+      // 切换标签页回来时检测
+      document.addEventListener("visibilitychange", () => {
+        if(document.visibilityState === "visible"){
+          checkForUpdate();
+        }
+      });
+
+      // 每 5 分钟轮询
+      checkTimer = setInterval(checkForUpdate, 5 * 60 * 1000);
+    })();
+

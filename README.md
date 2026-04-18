@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-00a?logo=fastapi)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3.x-38b?logo=tailwind-css)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-V1.8.2-purple)
+![Version](https://img.shields.io/badge/Version-V1.9.0-purple)
 
 *A modern, elegant feedback generator for HOUHAI English teachers*
 
