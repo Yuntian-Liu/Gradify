@@ -206,8 +206,8 @@
       if(!state.lastGeneratedStudentName || curName===state.lastGeneratedStudentName) return null;
       const curNotes=elements.errorNotes.value.trim();
       const curIssues=Array.from(elements.issues).filter(cb=>cb.checked).map(cb=>cb.value).sort();
-      const notesChanged=curNotes!==state.lastGeneratedErrorNotes;
-      const issuesChanged=JSON.stringify(curIssues)!==JSON.stringify(state.lastGeneratedIssues||[]);
+      const notesChanged=curNotes!==state.lastGeneratedErrorNotes||curNotes==="";
+      const issuesChanged=JSON.stringify(curIssues)!==JSON.stringify(state.lastGeneratedIssues||[])||curIssues.length===0;
       if(notesChanged && issuesChanged) return null;
       return {notesUnchanged:!notesChanged, issuesUnchanged:!issuesChanged};
     }

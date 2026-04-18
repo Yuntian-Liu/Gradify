@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.2] - 2026-04-18
+
+### Fixed
+- Stale data guard (`getStaleChecks`) false-positive: empty Error Notes or unchecked Issue flags were incorrectly reported as "unchanged from previous student" when switching between students. Empty fields now bypass the comparison since they cannot waste tokens.
+
 ## [1.8.1] - 2026-04-12
 
 ### Changed
