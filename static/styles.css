@@ -131,6 +131,8 @@ table { border-collapse: collapse; border-spacing: 0; }
 .tw-bg-white-60 { background-color: rgba(255,255,255,0.60); }
 .tw-bg-white { background-color: #ffffff; }
 .tw-bg-black { background-color: #000000; color: white; }
+.tw-bg-success { background-color: #2ec4b6; color: white; }
+.tw-bg-error { background-color: #dc2626; color: white; }
 .hover\:tw-bg-black-5:hover { background-color: rgba(0,0,0,0.05); }
 .hover\:tw-brightness-110:hover { filter: brightness(1.1); }
 .hover\:tw-text-coral:hover { color: #ff6b35; }
@@ -159,6 +161,8 @@ table { border-collapse: collapse; border-spacing: 0; }
 /* --- Animation --- */
 @keyframes tw-spin { to { transform: rotate(360deg); } }
 .tw-animate-spin { animation: tw-spin 1s linear infinite; }
+@keyframes tw-fade-in { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+.tw-animate-fade-in { animation: tw-fade-in .25s ease-out; }
 
 /* --- Responsive --- */
 @media (min-width: 768px) {

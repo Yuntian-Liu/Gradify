@@ -24,8 +24,8 @@
 
     function showToast(message, type="success"){
       const toast=document.createElement("div");
-      const bgClass=type==="success"?"tw-bg-coral":"tw-bg-coral";
-      toast.className=`${bgClass} tw-text-white tw-px-4 tw-py-2 tw-rounded-xl tw-shadow-xl tw-text-sm tw-font-semibold`;
+      const bgClass=type==="error"?"tw-bg-error":"tw-bg-success";
+      toast.className=`${bgClass} tw-px-4 tw-py-2 tw-rounded-xl tw-shadow-xl tw-text-sm tw-font-semibold tw-animate-fade-in`;
       toast.textContent=message; elements.toastContainer.appendChild(toast); setTimeout(()=>toast.remove(),2200);
     }
     function showGenerateStatus(message, type="info"){
@@ -386,10 +386,26 @@
       });
       refresh();
     }
+    function copyRichViaExecCommand(html){
+      const d=document.createElement("div");
+      d.contentEditable="true"; d.innerHTML=html;
+      d.style.cssText="position:fixed;opacity:0;left:-9999px;top:0;width:1px;height:1px;overflow:hidden";
+      document.body.appendChild(d);
+      const r=document.createRange(); r.selectNodeContents(d);
+      const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      const ok=document.execCommand("copy");
+      s.removeAllRanges(); document.body.removeChild(d);
+      return ok;
+    }
     async function copyToClipboard(text,msg){
       if(!text)return;
-      try{await navigator.clipboard.writeText(text); showToast(msg);}
-      catch{const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); const ok=document.execCommand("copy"); document.body.removeChild(ta); if(ok)showToast(msg); else showToast("复制失败，请手动复制","error");}
+      const ta=document.createElement("textarea"); ta.value=text;
+      ta.style.cssText="position:fixed;opacity:0;left:-9999px;top:0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      const ok=document.execCommand("copy"); document.body.removeChild(ta);
+      if(ok){showToast(msg); return;}
+      try{await navigator.clipboard.writeText(text); showToast(msg); return;}catch{}
+      showToast("复制失败，请手动复制","error");
     }
     async function copyRichToClipboard({html,text,msg}){
       if(!text && !html) return;
@@ -403,12 +419,11 @@
             "text/plain": new Blob([text||""],{type:"text/plain"})
           });
           await navigator.clipboard.write([item]);
-          showToast(msg);
-          if(editable) elements.markdownOutput.contentEditable = editable;
-          return;
+          showToast(msg); if(editable)elements.markdownOutput.contentEditable=editable; return;
         }
-      }catch(e){console.warn("[Gradify] Rich copy failed:",e);}
-      if(editable) elements.markdownOutput.contentEditable = editable;
+      }catch(e){console.warn("[Gradify] Clipboard API failed:",e);}
+      if(copyRichViaExecCommand(safeHtml)){showToast(msg); if(editable)elements.markdownOutput.contentEditable=editable; return;}
+      if(editable)elements.markdownOutput.contentEditable=editable;
       await copyToClipboard(text||"", msg);
     }
     function toggleAssistantPanel(forceOpen=null){
